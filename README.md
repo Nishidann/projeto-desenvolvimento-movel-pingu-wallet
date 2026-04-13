@@ -6,8 +6,7 @@ Este é um sistema de gestão financeira pessoal desenvolvido para oferecer cont
 
 O projeto consiste em um ecossistema completo composto por um aplicativo móvel desenvolvido em Flutter, uma API robusta em Node.js e um banco de dados relacional PostgreSQL. A arquitetura foi pensada para ser escalável, utilizando Docker para infraestrutura e Firebase Auth para garantir a segurança dos dados dos usuários.
 
-## 🚀 Funcionalidades (Sprint 1)
-
+## 🚀 Funcionalidades 
 Atualmente, o projeto encontra-se em sua fase inicial (MVP), com as seguintes funcionalidades core implementadas:
 
 * Gestão de Transações: Cadastro de receitas e despesas com descrição e valores.
