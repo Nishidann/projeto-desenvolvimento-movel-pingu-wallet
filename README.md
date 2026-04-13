@@ -73,7 +73,7 @@ flutter run
 
 ## 📄 Licença
 
-Este projeto está sob a licença **MIT**. Veja o arquivo LICENSE para mais detalhes.
+Este projeto está sob a licença **Apache 2.0**. Veja o arquivo LICENSE para mais detalhes.
 
 ## Desenvolvido por:
  João Pedro Araújo.  
