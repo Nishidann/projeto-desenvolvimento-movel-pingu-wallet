@@ -76,7 +76,7 @@ flutter run
 Este projeto está sob a licença **MIT**. Veja o arquivo LICENSE para mais detalhes.
 
 ## Desenvolvido por:
- João Pedro Araújo.
- Daniel Suzuki Naves.
- Luís Fernando Moreira Beani.
- Guilherme Teruichi Nishida. 
+ João Pedro Araújo.  
+ Daniel Suzuki Naves.  
+ Luís Fernando Moreira Beani.  
+ Guilherme Teruichi Nishida.  
