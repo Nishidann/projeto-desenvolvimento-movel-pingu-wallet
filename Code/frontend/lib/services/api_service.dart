@@ -1,25 +1,80 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/user_model.dart'; // Importa o modelo que criamos
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // Necessário para o kIsWeb
 
 class ApiService {
-  final String baseUrl = 'http://localhost:3000';
+  // Define o IP dinamicamente: Localhost para Web (Firefox), 10.0.2.2 para Emulador Android
+  static const String baseUrl = kIsWeb 
+      ? 'http://localhost:3000' 
+      : 'http://10.0.2.2:3000';
 
-  Future<void> cadastrarUsuarioNoBanco(UserModel usuario) async {
+  // ==========================
+  // FUNÇÃO DE LOGIN
+  // ==========================
+  Future<bool> login(String email, String senha) async {
+    final url = Uri.parse('$baseUrl/usuarios/login');
+    
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/users'),
+        url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(usuario.toJson()), // Usa o método toJson do modelo
+        body: jsonEncode({
+          'email': email,
+          'senha': senha,
+        }),
       );
 
-      if (response.statusCode == 201) {
-        print('✅ Usuário ${usuario.name} sincronizado com sucesso!');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token']; // Pega o token gigante que o Node.js enviou
+        
+        // Salva o token na memória segura do navegador/celular
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', token);
+        
+        return true; // Retorna sucesso para a tela fechar o loading
       } else {
-        print('❌ Erro no Backend: ${response.body}');
+        print('Falha no login. Status: ${response.statusCode}');
+        return false;
       }
     } catch (e) {
-      print('❌ Falha na conexão: $e');
+      print('Erro de rede ao tentar logar: $e');
+      return false;
+    }
+  }
+
+  // ==========================
+  // FUNÇÃO DE REGISTRO
+  // ==========================
+  Future<bool> registrar({
+    required String nome,
+    required int idade,
+    required String cpf,
+    required String cep,
+    required String email,
+    required String senha,
+  }) async {
+    final url = Uri.parse('$baseUrl/usuarios/registrar');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nome': nome,
+          'idade': idade,
+          'cpf': cpf,
+          'cep': cep,
+          'email': email,
+          'senha': senha,
+        }),
+      );
+
+      return response.statusCode == 201; // 201 Significa "Criado com sucesso"
+    } catch (e) {
+      print('Erro de rede ao registrar: $e');
+      return false;
     }
   }
 }
