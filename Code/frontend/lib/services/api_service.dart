@@ -45,6 +45,38 @@ class ApiService {
   }
 
   // ==========================
+  // FUNÇÃO DE RESUMO FINANCEIRO
+  // ==========================
+  Future<Map<String, dynamic>?> buscarResumo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) return null;
+
+    final url = Uri.parse('$baseUrl/resumo');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Falha ao buscar resumo. Status: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Erro de rede ao buscar resumo: $e');
+      return null;
+    }
+  }
+
+  // ==========================
   // FUNÇÃO DE REGISTRO
   // ==========================
   Future<bool> registrar({
