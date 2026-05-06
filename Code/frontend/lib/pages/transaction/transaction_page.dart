@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../models/transaction_model.dart';
 import '../../services/api_service.dart';
 
@@ -28,24 +29,48 @@ class TransactionPage extends StatefulWidget {
 }
 
 class _TransactionPageState extends State<TransactionPage> {
-  final _descricaoController = TextEditingController();
+  final _nomeController = TextEditingController();
   final _valorController = TextEditingController();
-  final _categoriaController = TextEditingController();
+  String _categoriaSelecionada = '';
   String _tipo = 'despesa';
   bool _isLoading = false;
+  DateTime _dataSelecionada = DateTime.now();
 
   final ApiService _apiService = ApiService();
+
+  List<Map<String, dynamic>> get _categorias {
+    if (_tipo == 'despesa') {
+      return [
+        {'nome': 'Alimentação', 'icon': Icons.restaurant},
+        {'nome': 'Transporte', 'icon': Icons.directions_car},
+        {'nome': 'Moradia', 'icon': Icons.home},
+        {'nome': 'Saúde', 'icon': Icons.favorite},
+        {'nome': 'Educação', 'icon': Icons.school},
+        {'nome': 'Lazer', 'icon': Icons.sports_esports},
+        {'nome': 'Roupas', 'icon': Icons.checkroom},
+        {'nome': 'Assinaturas', 'icon': Icons.subscriptions},
+        {'nome': 'Outros', 'icon': Icons.more_horiz},
+      ];
+    } else {
+      return [
+        {'nome': 'Salário', 'icon': Icons.work},
+        {'nome': 'Freelance', 'icon': Icons.laptop},
+        {'nome': 'Investimento', 'icon': Icons.trending_up},
+        {'nome': 'Presente', 'icon': Icons.card_giftcard},
+        {'nome': 'Outros', 'icon': Icons.more_horiz},
+      ];
+    }
+  }
 
   void _salvarTransacao() async {
     setState(() {
       _isLoading = true;
     });
 
-    final descricao = _descricaoController.text;
+    final nome = _nomeController.text;
     final valor = double.tryParse(_valorController.text) ?? 0.0;
-    final categoria = _categoriaController.text;
 
-    if (descricao.isEmpty || valor <= 0 || categoria.isEmpty) {
+    if (nome.isEmpty || valor <= 0 || _categoriaSelecionada.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, preencha todos os campos corretamente.'),
@@ -59,10 +84,11 @@ class _TransactionPageState extends State<TransactionPage> {
     }
 
     final novaTransacao = TransactionModel(
-      descricao: descricao,
+      descricao: nome,
       valor: valor,
       tipo: _tipo,
-      categoria: categoria,
+      categoria: _categoriaSelecionada,
+      dataTransacao: _dataSelecionada,
     );
 
     try {
@@ -211,9 +237,9 @@ class _TransactionPageState extends State<TransactionPage> {
 
                         // Campos de texto
                         _inputField(
-                          controller: _descricaoController,
-                          label: 'Descrição',
-                          icon: Icons.description,
+                          controller: _nomeController,
+                          label: 'Nome',
+                          icon: Icons.label_outline,
                         ),
                         const SizedBox(height: 14),
                         _inputField(
@@ -223,11 +249,9 @@ class _TransactionPageState extends State<TransactionPage> {
                           isNumber: true,
                         ),
                         const SizedBox(height: 14),
-                        _inputField(
-                          controller: _categoriaController,
-                          label: 'Categoria',
-                          icon: Icons.category,
-                        ),
+                        _dropdownCategoria(),
+                        const SizedBox(height: 14),
+                        _datePicker(),
                         const SizedBox(height: 32),
 
                         // Botão de salvar com loading
@@ -303,6 +327,7 @@ class _TransactionPageState extends State<TransactionPage> {
       onPressed: () {
         setState(() {
           _tipo = tipoNome.toLowerCase();
+          _categoriaSelecionada = '';
         });
       },
       child: Text(
@@ -311,6 +336,106 @@ class _TransactionPageState extends State<TransactionPage> {
           fontSize: 13,
           color: isSelected ? corAtiva : Colors.grey.shade600,
           fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdownCategoria() {
+    final corAtiva = _tipo == 'despesa' ? Colors.red.shade400 : AppColors.success;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _categoriaSelecionada.isEmpty ? null : _categoriaSelecionada,
+          hint: Row(
+            children: [
+              const Icon(Icons.category, size: 20, color: AppColors.secondary),
+              const SizedBox(width: 12),
+              Text(
+                'Categoria',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          isExpanded: true,
+          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade500),
+          items: _categorias.map((cat) {
+            return DropdownMenuItem<String>(
+              value: cat['nome'] as String,
+              child: Row(
+                children: [
+                  Icon(cat['icon'] as IconData, size: 20, color: corAtiva),
+                  const SizedBox(width: 12),
+                  Text(
+                    cat['nome'] as String,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _categoriaSelecionada = value ?? '';
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _datePicker() {
+    final formatter = DateFormat('dd/MM/yyyy');
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _dataSelecionada,
+          firstDate: DateTime(2020),
+          lastDate: DateTime.now(),
+        );
+        if (picked != null) {
+          setState(() {
+            _dataSelecionada = picked;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200, width: 1),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today,
+                size: 20, color: AppColors.secondary),
+            const SizedBox(width: 12),
+            Text(
+              formatter.format(_dataSelecionada),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textDark,
+              ),
+            ),
+            const Spacer(),
+            Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade500),
+          ],
         ),
       ),
     );

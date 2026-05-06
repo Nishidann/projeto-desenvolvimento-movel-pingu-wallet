@@ -23,6 +23,8 @@ class TransactionModel {
       'valor': valor,
       'tipo': tipo,
       'categoria': categoria,
+      if (dataTransacao != null)
+        'data_transacao': dataTransacao!.toIso8601String(),
     };
   }
 
