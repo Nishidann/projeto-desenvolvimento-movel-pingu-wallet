@@ -29,10 +29,13 @@ class ApiService {
         final data = jsonDecode(response.body);
         final token =
             data['token']; // Pega o token gigante que o Node.js enviou
+        final nomeUsuario =
+            data['usuario']['nome'] ?? 'Usuário'; // Extrai o nome do usuário
 
-        // Salva o token na memória segura do navegador/celular
+        // Salva o token e o nome na memória segura do navegador/celular
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token);
+        await prefs.setString('nome_usuario', nomeUsuario);
 
         return true; // Retorna sucesso para a tela fechar o loading
       } else {
@@ -73,7 +76,13 @@ class ApiService {
         }),
       );
 
-      return response.statusCode == 201; // 201 Significa "Criado com sucesso"
+      if (response.statusCode == 201) {
+        // Salva o nome do usuário após registro bem-sucedido
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('nome_usuario', nome);
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Erro de rede ao registrar: $e');
       return false;
@@ -94,6 +103,8 @@ class ApiService {
         'valor': transacao.valor,
         'tipo': transacao.tipo,
         'categoria': transacao.categoria,
+        if (transacao.dataTransacao != null)
+          'data_transacao': transacao.dataTransacao!.toIso8601String(),
       }),
     );
 
@@ -115,6 +126,22 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Erro ao carregar transações do servidor.');
+    }
+  }
+
+  // ==========================
+  // GASTOS POR CATEGORIA
+  // ==========================
+  Future<List<dynamic>> obterGastosPorCategoria(int usuarioId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/transacoes/usuario/$usuarioId/gastos-por-categoria'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Erro ao carregar gastos por categoria.');
     }
   }
 }

@@ -29,12 +29,24 @@ class _DashboardPageState extends State<DashboardPage> {
   final int usuarioId = 1;
 
   List<dynamic> _transacoes = [];
+  List<dynamic> _gastosPorCategoria = [];
   bool _isLoading = true;
   String _nomeUsuario = 'Usuário';
 
   double _totalBalance = 0.0;
   double _monthlyIncome = 0.0;
   double _monthlyExpenses = 0.0;
+
+  static const List<Color> _categoryColors = [
+    Color(0xFF1E3A8A),
+    Color(0xFFFF7A00),
+    Color(0xFF10B981),
+    Color(0xFFEF4444),
+    Color(0xFF8B5CF6),
+    Color(0xFFF59E0B),
+    Color(0xFF06B6D4),
+    Color(0xFFEC4899),
+  ];
 
   @override
   void initState() {
@@ -48,6 +60,7 @@ class _DashboardPageState extends State<DashboardPage> {
     });
     await _carregarUsuario();
     await _carregarTransacoes();
+    await _carregarGastosPorCategoria();
     _calcularResumoMensal();
   }
 
@@ -70,6 +83,17 @@ class _DashboardPageState extends State<DashboardPage> {
         _isLoading = false;
       });
       print('Erro ao carregar transações: $e');
+    }
+  }
+
+  Future<void> _carregarGastosPorCategoria() async {
+    try {
+      final dados = await _apiService.obterGastosPorCategoria(usuarioId);
+      setState(() {
+        _gastosPorCategoria = dados;
+      });
+    } catch (e) {
+      print('Erro ao carregar gastos por categoria: $e');
     }
   }
 
@@ -300,6 +324,10 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 24),
 
+            // Gráfico de Pizza - Gastos por Categoria
+            if (_gastosPorCategoria.isNotEmpty) ..._buildPieChartSection(),
+            const SizedBox(height: 24),
+
             // Título Transações
             const Text(
               'Transações Recentes',
@@ -415,6 +443,119 @@ class _DashboardPageState extends State<DashboardPage> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  List<Widget> _buildPieChartSection() {
+    final total = _gastosPorCategoria.fold<double>(
+      0.0,
+      (sum, item) => sum + (double.tryParse(item['total'].toString()) ?? 0.0),
+    );
+
+    final sections = <PieChartSectionData>[];
+    for (int i = 0; i < _gastosPorCategoria.length; i++) {
+      final item = _gastosPorCategoria[i];
+      final valor = double.tryParse(item['total'].toString()) ?? 0.0;
+      final percent = total > 0 ? (valor / total * 100) : 0.0;
+      final color = _categoryColors[i % _categoryColors.length];
+      sections.add(
+        PieChartSectionData(
+          value: valor,
+          title: '${percent.toStringAsFixed(1)}%',
+          color: color,
+          radius: 60,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    return [
+      const Text(
+        'Gastos por Categoria',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: AppColors.primary,
+        ),
+      ),
+      const SizedBox(height: 14),
+      Card(
+        elevation: 0,
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: BorderSide(color: Colors.grey.shade100, width: 1.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              SizedBox(
+                height: 180,
+                width: 180,
+                child: PieChart(
+                  PieChartData(
+                    sections: sections,
+                    centerSpaceRadius: 36,
+                    sectionsSpace: 3,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(_gastosPorCategoria.length, (i) {
+                    final item = _gastosPorCategoria[i];
+                    final color = _categoryColors[i % _categoryColors.length];
+                    final valor =
+                        double.tryParse(item['total'].toString()) ?? 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item['categoria'] ?? 'Outros',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            NumberFormat.currency(
+                                    locale: 'pt_BR', symbol: 'R\$')
+                                .format(valor),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildCard(String title, String value, Color colorType) {
