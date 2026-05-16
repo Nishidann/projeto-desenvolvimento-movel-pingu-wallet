@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../transaction/transaction_page.dart';
 import '../../services/api_service.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AppColors {
   static const Color background = Color(0xFFF8FAFC);
@@ -26,12 +27,15 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final ApiService _apiService = ApiService();
-  final int usuarioId = 1;
+  int? usuarioId;
 
   List<dynamic> _transacoes = [];
   List<dynamic> _gastosPorCategoria = [];
   bool _isLoading = true;
+  bool _mostrarTodasAsTransacoes =
+      false; // Controla se a lista está expandida ou minimizada
   String _nomeUsuario = 'Usuário';
+  String _emailUsuario = 'pinguim@wallet.com';
 
   double _totalBalance = 0.0;
   double _monthlyIncome = 0.0;
@@ -55,40 +59,74 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _carregarDadosIniciais() async {
-    setState(() {
-      _isLoading = true;
-    });
-    await _carregarUsuario();
-    await _carregarTransacoes();
-    await _carregarGastosPorCategoria();
-    _calcularResumoMensal();
+    setState(() => _isLoading = true);
+
+    // Busca o ID do token salvo no SharedPreferences
+    final idDoToken = await _apiService.getUsuarioId();
+
+    if (idDoToken != null) {
+      setState(() {
+        usuarioId = idDoToken;
+      });
+      // Agora que temos o ID, carregamos o resto
+      await _carregarUsuario();
+      await _carregarTransacoes();
+      await _carregarGastosPorCategoria();
+      _calcularResumoMensal();
+    } else {
+      // Se não tiver token ou ID, volta para o login
+      if (mounted) Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   Future<void> _carregarUsuario() async {
     final prefs = await SharedPreferences.getInstance();
+
+    String? emailEncontrado = prefs.getString('email_usuario');
+
+    // Se o e-mail guardado veio como "usuario@wallet.com" ou nulo, vamos extrair do JWT!
+    if (emailEncontrado == null || emailEncontrado == 'usuario@wallet.com') {
+      final token = prefs.getString('jwt_token');
+      if (token != null && !JwtDecoder.isExpired(token)) {
+        try {
+          Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+          // O seu payload do JWT do Node.js geralmente injeta o campo "email" ou "emailUsuario"
+          if (decodedToken.containsKey('email')) {
+            emailEncontrado = decodedToken['email'];
+          }
+        } catch (e) {
+          debugPrint("Erro ao extrair e-mail do JWT: $e");
+        }
+      }
+    }
+
     setState(() {
       _nomeUsuario = prefs.getString('nome_usuario') ?? 'Daniel';
+      // Se encontrou o e-mail real usa ele, senão mantém o pinguim genérico por segurança
+      _emailUsuario = emailEncontrado ?? 'pinguim@wallet.com';
     });
   }
 
   Future<void> _carregarTransacoes() async {
+    if (usuarioId == null) return;
     try {
-      final dados = await _apiService.obterTransacoes(usuarioId);
+      final dados = await _apiService.obterTransacoes(usuarioId!);
       setState(() {
-        _transacoes = dados;
+        // Forçamos a conversão limpa para garantir que o Flutter não rejeite o tipo de dado da lista
+        _transacoes = List<dynamic>.from(dados);
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      print('Erro ao carregar transações: $e');
+      print('Erro ao carregar transações no Dashboard: $e');
     }
   }
 
   Future<void> _carregarGastosPorCategoria() async {
     try {
-      final dados = await _apiService.obterGastosPorCategoria(usuarioId);
+      final dados = await _apiService.obterGastosPorCategoria(usuarioId!);
       setState(() {
         _gastosPorCategoria = dados;
       });
@@ -102,11 +140,15 @@ class _DashboardPageState extends State<DashboardPage> {
     double expenses = 0.0;
 
     for (var t in _transacoes) {
-      final valor = double.tryParse(t['valor'].toString()) ?? 0.0;
-      if (t['tipo'] == 'receita') {
-        income += valor;
-      } else if (t['tipo'] == 'despesa') {
-        expenses += valor;
+      if (t != null && t['valor'] != null) {
+        final valor = double.tryParse(t['valor'].toString()) ?? 0.0;
+        final tipoTransacao = t['tipo'].toString().trim().toLowerCase();
+
+        if (tipoTransacao == 'receita') {
+          income += valor;
+        } else if (tipoTransacao == 'despesa') {
+          expenses += valor;
+        }
       }
     }
 
@@ -129,20 +171,27 @@ class _DashboardPageState extends State<DashboardPage> {
     List<FlSpot> spots = [];
     double saldoAcumulado = 0.0;
 
-    // Inverte a lista para que a transação mais antiga fique no ponto zero
     final transacoesInvertidas = _transacoes.reversed.toList();
 
     for (int i = 0; i < transacoesInvertidas.length && i < 7; i++) {
       final t = transacoesInvertidas[i];
-      final double valor = double.tryParse(t['valor'].toString()) ?? 0.0;
+      if (t != null && t['valor'] != null) {
+        final double valor = double.tryParse(t['valor'].toString()) ?? 0.0;
+        final tipoTransacao = t['tipo'].toString().trim().toLowerCase();
 
-      if (t['tipo'] == 'despesa') {
-        saldoAcumulado -= valor;
-      } else {
-        saldoAcumulado += valor;
+        if (tipoTransacao == 'despesa') {
+          saldoAcumulado -= valor;
+        } else if (tipoTransacao == 'receita') {
+          saldoAcumulado += valor;
+        }
+
+        spots.add(FlSpot(i.toDouble(), saldoAcumulado));
       }
+    }
 
-      spots.add(FlSpot(i.toDouble(), saldoAcumulado));
+    // Garante que o gráfico nunca fica sem dados para desenhar
+    if (spots.isEmpty) {
+      spots = [const FlSpot(0, 0.0), const FlSpot(1, 0.0)];
     }
 
     return spots;
@@ -196,28 +245,35 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Olá, $_nomeUsuario! 👋',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
+                  // ENVOLVA A COLUNA DE TEXTOS COM EXPANDED
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Olá, $_nomeUsuario! 👋',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                          overflow: TextOverflow
+                              .ellipsis, // Evita quebrar se a janela for mini
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Resumo das suas finanças',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Resumo das suas finanças',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(
+                      width: 12), // Pequeno respiro entre o texto e o ícone
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.12),
+                      color: AppColors.accent.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.icecream,
@@ -349,98 +405,188 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Text('Nenhuma transação encontrada.'),
                         ),
                       )
-                    : ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: _transacoes.length,
-                        itemBuilder: (context, index) {
-                          final t = _transacoes[index];
-                          final isDespesa = t['tipo'] == 'despesa';
-                          final valor =
-                              double.tryParse(t['valor'].toString()) ?? 0.0;
+                    : Column(
+                        // <--- ENVOLVEMOS EM UMA COLUMN PARA POR O BOTÃO DE EXPANDIR
+                        children: [
+                          ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            // Define a contagem baseada na variável de controle
+                            itemCount: _mostrarTodasAsTransacoes
+                                ? _transacoes.length
+                                : (_transacoes.length > 5
+                                    ? 5
+                                    : _transacoes.length),
+                            itemBuilder: (context, index) {
+                              final t = _transacoes[index];
+                              final isDespesa = t['tipo'] == 'despesa';
+                              final valor =
+                                  double.tryParse(t['valor'].toString()) ?? 0.0;
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    CircleAvatar(
-                                      backgroundColor: isDespesa
-                                          ? Colors.red.shade50
-                                          : AppColors.success
-                                              .withValues(alpha: 0.1),
-                                      child: Icon(
-                                        isDespesa
-                                            ? Icons.arrow_downward
-                                            : Icons.arrow_upward,
-                                        color: isDespesa
-                                            ? Colors.red.shade400
-                                            : AppColors.success,
-                                        size: 18,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    Row(
                                       children: [
-                                        Text(
-                                          t['descricao'] ?? 'Sem Descrição',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 14,
+                                        CircleAvatar(
+                                          backgroundColor: isDespesa
+                                              ? Colors.red.shade50
+                                              : AppColors.success
+                                                  .withValues(alpha: 0.1),
+                                          child: Icon(
+                                            isDespesa
+                                                ? Icons.arrow_downward
+                                                : Icons.arrow_upward,
+                                            color: isDespesa
+                                                ? Colors.red.shade400
+                                                : AppColors.success,
+                                            size: 18,
                                           ),
                                         ),
-                                        Text(
-                                          t['categoria'] ?? 'Geral',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey,
-                                          ),
+                                        const SizedBox(width: 16),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              t['descricao'] ?? 'Sem Descrição',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Text(
+                                              t['categoria'] ?? 'Geral',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
+                                    Text(
+                                      '${isDespesa ? '-' : '+'} ${currencyFormat.format(valor)}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        color: isDespesa
+                                            ? Colors.red.shade400
+                                            : AppColors.success,
+                                      ),
+                                    ),
                                   ],
                                 ),
-                                Text(
-                                  '${isDespesa ? '-' : '+'} ${currencyFormat.format(valor)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14,
-                                    color: isDespesa
-                                        ? Colors.red.shade400
-                                        : AppColors.success,
-                                  ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          // BOTÃO DINÂMICO: Expande ou minimiza a própria lista do Dashboard
+                          if (_transacoes.length > 5)
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _mostrarTodasAsTransacoes =
+                                      !_mostrarTodasAsTransacoes;
+                                });
+                              },
+                              icon: Icon(
+                                _mostrarTodasAsTransacoes
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                color: AppColors.primary,
+                              ),
+                              label: Text(
+                                _mostrarTodasAsTransacoes
+                                    ? "Mostrar menos"
+                                    : "Ver histórico completo",
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
+                              ),
                             ),
-                          );
-                        },
+                        ],
                       ),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(
+                  context, '/historico'), // Rota da tela do Beani
+              child: const Text("Ver histórico completo →"),
+            )
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.accent,
-        foregroundColor: AppColors.textLight,
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TransactionPage(usuarioId: usuarioId),
-            ),
-          ).then((_) => _carregarDadosIniciais());
+          if (usuarioId != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TransactionPage(usuarioId: usuarioId!),
+              ),
+            ).then((_) => _carregarDadosIniciais());
+          } else {
+            print("Erro: Usuário não identificado.");
+          }
         },
-        tooltip: 'Nova Transação',
         child: const Icon(Icons.add),
+      ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Color(0xFF1E3A8A), size: 36),
+              ),
+              accountName: Text(_nomeUsuario),
+              accountEmail: Text(_emailUsuario),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
+              title: const Text("Dashboard",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/home'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart, color: Color(0xFF1E3A8A)),
+              title: const Text("Relatório Mensal",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/relatorio'),
+            ),
+            const Spacer(),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text("Sair da Conta",
+                  style: TextStyle(
+                      color: Colors.redAccent, fontWeight: FontWeight.bold)),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear(); // Limpa tokens e dados salvos
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/login', (route) => false);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
@@ -505,6 +651,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               const SizedBox(width: 20),
+              // CORRIGIDO: Envolvemos a Column com Expanded para eliminar de vez o estouro de layout!
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,6 +673,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                           ),
                           const SizedBox(width: 8),
+                          // CORRIGIDO: Envolvemos o nome da categoria com Expanded para restringir o espaço horizontal
                           Expanded(
                             child: Text(
                               item['categoria'] ?? 'Outros',
@@ -533,9 +681,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
+                              overflow: TextOverflow
+                                  .ellipsis, // Corta textos gigantes com '...'
                             ),
                           ),
+                          const SizedBox(width: 4),
                           Text(
                             NumberFormat.currency(
                                     locale: 'pt_BR', symbol: 'R\$')

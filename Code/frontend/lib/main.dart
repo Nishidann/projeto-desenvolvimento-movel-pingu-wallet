@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// Importe as telas
 import 'pages/login/login_page.dart';
 import 'pages/login/registro_page.dart';
 import 'pages/dashboard/dashboard_page.dart';
+import 'pages/relatorio/relatorio_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,23 +22,22 @@ class PinguWallet extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E3A8A)),
         useMaterial3: true,
       ),
-      darkTheme: ThemeData.dark(useMaterial3: true),
-
-      // Começa diretamente na checagem de autenticação (AuthCheck)
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthCheck(),
         '/login': (context) => const LoginPage(),
         '/registro': (context) => const RegistroPage(),
         '/home': (context) => const DashboardPage(),
+        '/relatorio': (context) => const RelatorioPage(),
+        // Criamos uma rota temporária para o histórico do Beani não quebrar o app
+        '/historico': (context) => const Scaffold(
+              body: Center(child: Text("Tela de Histórico (Task do Beani)")),
+            ),
       },
     );
   }
 }
 
-// ========================================================
-// TELA DE CHECAGEM DE AUTENTICAÇÃO
-// ========================================================
 class AuthCheck extends StatefulWidget {
   const AuthCheck({super.key});
 
