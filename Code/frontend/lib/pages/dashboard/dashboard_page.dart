@@ -235,9 +235,55 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            FittedBox(child: Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color))),
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Color(0xFF1E3A8A), size: 36),
+              ),
+              accountName: Text(_nomeUsuario),
+              accountEmail: Text(_emailUsuario),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
+              title: const Text("Dashboard",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/home'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart, color: Color(0xFF1E3A8A)),
+              title: const Text("Relatório Mensal",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/relatorio'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history,
+                color: Color(0xFF1E3A8A)),
+              title: const Text(
+                "Histórico",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onTap: () =>
+                Navigator.pushReplacementNamed(context, '/historico'),
+            ),
+            const Spacer(),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text("Sair da Conta",
+                  style: TextStyle(
+                      color: Colors.redAccent, fontWeight: FontWeight.bold)),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear(); // Limpa tokens e dados salvos
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/login', (route) => false);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

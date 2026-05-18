@@ -18,6 +18,7 @@ class _RelatorioPageState extends State<RelatorioPage> {
   double _totalDespesas = 0.0;
   List<dynamic> _gastosCategoria = [];
   String _nomeUsuario = 'Usuário';
+  String _emailUsuario = 'pinguim@wallet.com';
 
   @override
   void initState() {
@@ -46,7 +47,8 @@ class _RelatorioPageState extends State<RelatorioPage> {
 
       // Tenta carregar também o nome do usuário para o Drawer
       final prefs = await SharedPreferences.getInstance();
-      _nomeUsuario = prefs.getString('nome_usuario') ?? 'Daniel';
+      _nomeUsuario = prefs.getString('nome_usuario') ?? 'Usuário';
+      _emailUsuario = prefs.getString('email_usuario') ?? 'pinguim@wallet.com';
 
       double receitasLocal = 0.0;
       double despesasLocal = 0.0;
@@ -111,7 +113,7 @@ class _RelatorioPageState extends State<RelatorioPage> {
                 child: Icon(Icons.person, color: Color(0xFF1E3A8A), size: 36),
               ),
               accountName: Text(_nomeUsuario),
-              accountEmail: const Text("pinguim@wallet.com"),
+              accountEmail: Text(_emailUsuario),
             ),
             ListTile(
               leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
@@ -125,6 +127,16 @@ class _RelatorioPageState extends State<RelatorioPage> {
                   style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () => Navigator.pop(
                   context), // Já está na tela de relatório, apenas fecha o menu
+            ),
+            ListTile(
+              leading: const Icon(Icons.history,
+                color: Color(0xFF1E3A8A)),
+              title: const Text(
+                "Histórico",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onTap: () =>
+                Navigator.pushNamed(context, '/historico'),
             ),
             const Spacer(),
             const Divider(),
