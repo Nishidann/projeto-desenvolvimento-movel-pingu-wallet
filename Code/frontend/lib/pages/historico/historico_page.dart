@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HistoricoPage extends StatefulWidget {
   const HistoricoPage({super.key});
@@ -24,6 +25,9 @@ class _HistoricoPageState extends State<HistoricoPage> {
 
   final List<String> _categorias = [];
 
+  String _nomeUsuario = 'Usuário';
+  String _emailUsuario = 'usuario@email.com';
+
   @override
   void initState() {
     super.initState();
@@ -41,19 +45,22 @@ class _HistoricoPageState extends State<HistoricoPage> {
         return;
       }
 
-      final transacoes =
-          await _apiService.obterTransacoes(idLogado);
+      final transacoes = await _apiService.obterTransacoes(idLogado);
 
       _categorias.clear();
 
       for (var t in transacoes) {
         final categoria = t['categoria'];
 
-        if (categoria != null &&
-            !_categorias.contains(categoria.toString())) {
+        if (categoria != null && !_categorias.contains(categoria.toString())) {
           _categorias.add(categoria.toString());
         }
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      _nomeUsuario = prefs.getString('nome_usuario') ?? 'Usuário';
+      _emailUsuario = prefs.getString('email_usuario') ?? 'usuario@email.com';
 
       setState(() {
         _transacoes = transacoes;
@@ -62,7 +69,6 @@ class _HistoricoPageState extends State<HistoricoPage> {
       });
     } catch (e) {
       debugPrint("Erro ao carregar histórico: $e");
-
       setState(() => _isLoading = false);
     }
   }
@@ -71,26 +77,18 @@ class _HistoricoPageState extends State<HistoricoPage> {
     List<dynamic> filtradas = _transacoes;
 
     // FILTRO CATEGORIA
-    if (_categoriaSelecionada != null &&
-        _categoriaSelecionada!.isNotEmpty) {
+    if (_categoriaSelecionada != null && _categoriaSelecionada!.isNotEmpty) {
       filtradas = filtradas.where((t) {
-        return t['categoria']
-                .toString()
-                .toLowerCase() ==
-            _categoriaSelecionada!
-                .toLowerCase();
+        return t['categoria'].toString().toLowerCase() ==
+            _categoriaSelecionada!.toLowerCase();
       }).toList();
     }
 
     // FILTRO DATA INICIAL
     if (_dataInicio != null) {
       filtradas = filtradas.where((t) {
-        final data =
-            DateTime.parse(t['data']);
-
-        return data.isAfter(
-                _dataInicio!
-                    .subtract(const Duration(days: 1))) ||
+        final data = DateTime.parse(t['data_transacao']);
+        return data.isAfter(_dataInicio!.subtract(const Duration(days: 1))) ||
             data.isAtSameMomentAs(_dataInicio!);
       }).toList();
     }
@@ -98,12 +96,8 @@ class _HistoricoPageState extends State<HistoricoPage> {
     // FILTRO DATA FINAL
     if (_dataFim != null) {
       filtradas = filtradas.where((t) {
-        final data =
-            DateTime.parse(t['data']);
-
-        return data.isBefore(
-                _dataFim!
-                    .add(const Duration(days: 1))) ||
+        final data = DateTime.parse(t['data_transacao']);
+        return data.isBefore(_dataFim!.add(const Duration(days: 1))) ||
             data.isAtSameMomentAs(_dataFim!);
       }).toList();
     }
@@ -125,7 +119,6 @@ class _HistoricoPageState extends State<HistoricoPage> {
       setState(() {
         _dataInicio = data;
       });
-
       _aplicarFiltros();
     }
   }
@@ -142,7 +135,6 @@ class _HistoricoPageState extends State<HistoricoPage> {
       setState(() {
         _dataFim = data;
       });
-
       _aplicarFiltros();
     }
   }
@@ -158,15 +150,13 @@ class _HistoricoPageState extends State<HistoricoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat =
-        NumberFormat.currency(
+    final currencyFormat = NumberFormat.currency(
       locale: 'pt_BR',
       symbol: 'R\$',
     );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-
       appBar: AppBar(
         title: const Text(
           "Histórico de Transações",
@@ -176,31 +166,114 @@ class _HistoricoPageState extends State<HistoricoPage> {
           ),
         ),
         backgroundColor: const Color(0xFF1E3A8A),
-        iconTheme:
-            const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E3A8A),
+              ),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  color: Color(0xFF1E3A8A),
+                  size: 36,
+                ),
+              ),
+              accountName: Text(_nomeUsuario),
+              accountEmail: Text(_emailUsuario),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.dashboard,
+                color: Color(0xFF1E3A8A),
+              ),
+              title: const Text(
+                "Dashboard",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () => Navigator.pushReplacementNamed(context, '/home'),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.bar_chart,
+                color: Color(0xFF1E3A8A),
+              ),
+              title: const Text(
+                "Relatório Mensal",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () => Navigator.pushReplacementNamed(context, '/relatorio'),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.history,
+                color: Color(0xFF1E3A8A),
+              ),
+              title: const Text(
+                "Histórico",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () => Navigator.pop(context),
+            ),
+            const Spacer(),
+            const Divider(),
+            ListTile(
+              leading: const Icon(
+                Icons.logout,
+                color: Colors.redAccent,
+              ),
+              title: const Text(
+                "Sair da Conta",
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
 
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )
           : Column(
               children: [
-
                 // FILTROS
                 Container(
                   padding: const EdgeInsets.all(16),
                   color: Colors.white,
                   child: Column(
                     children: [
-
                       DropdownButtonFormField<String>(
                         value: _categoriaSelecionada,
                         decoration: InputDecoration(
                           labelText: "Categoria",
                           border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                         items: [
@@ -208,7 +281,6 @@ class _HistoricoPageState extends State<HistoricoPage> {
                             value: null,
                             child: Text("Todas"),
                           ),
-
                           ..._categorias.map((categoria) {
                             return DropdownMenuItem(
                               value: categoria,
@@ -220,63 +292,46 @@ class _HistoricoPageState extends State<HistoricoPage> {
                           setState(() {
                             _categoriaSelecionada = value;
                           });
-
                           _aplicarFiltros();
                         },
                       ),
-
                       const SizedBox(height: 14),
-
                       Row(
                         children: [
-
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed:
-                                  _selecionarDataInicial,
-                              icon: const Icon(
-                                  Icons.date_range),
+                              onPressed: _selecionarDataInicial,
+                              icon: const Icon(Icons.date_range),
                               label: Text(
                                 _dataInicio == null
                                     ? "Data Inicial"
-                                    : DateFormat(
-                                            'dd/MM/yyyy')
-                                        .format(
-                                            _dataInicio!),
+                                    : DateFormat('dd/MM/yyyy')
+                                        .format(_dataInicio!),
                               ),
                             ),
                           ),
-
                           const SizedBox(width: 12),
-
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed:
-                                  _selecionarDataFinal,
-                              icon: const Icon(
-                                  Icons.date_range),
+                              onPressed: _selecionarDataFinal,
+                              icon: const Icon(Icons.date_range),
                               label: Text(
                                 _dataFim == null
                                     ? "Data Final"
-                                    : DateFormat(
-                                            'dd/MM/yyyy')
-                                        .format(
-                                            _dataFim!),
+                                    : DateFormat('dd/MM/yyyy')
+                                        .format(_dataFim!),
                               ),
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 12),
-
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(
                           onPressed: _limparFiltros,
                           icon: const Icon(Icons.clear),
-                          label:
-                              const Text("Limpar filtros"),
+                          label: const Text("Limpar filtros"),
                         ),
                       )
                     ],
@@ -288,133 +343,78 @@ class _HistoricoPageState extends State<HistoricoPage> {
                   child: RefreshIndicator(
                     onRefresh: _carregarHistorico,
                     child: ListView.builder(
-                      padding:
-                          const EdgeInsets.all(16),
-                      itemCount:
-                          _transacoesFiltradas.length,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _transacoesFiltradas.length,
                       itemBuilder: (context, index) {
-
-                        final t =
-                            _transacoesFiltradas[index];
-
-                        final valor =
-                            double.tryParse(
-                                  t['valor']
-                                      .toString(),
-                                ) ??
-                                0.0;
-
-                        final bool receita =
-                            t['tipo'] == 'receita';
+                        final t = _transacoesFiltradas[index];
+                        final valor = double.tryParse(t['valor'].toString()) ?? 0.0;
+                        final tipo = t['tipo']?.toString() ?? '';
+                        final bool receita = tipo.toLowerCase() == 'receita';
 
                         return Container(
-                          margin: const EdgeInsets.only(
-                              bottom: 12),
-
-                          padding:
-                              const EdgeInsets.all(16),
-
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(
-                                    20),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color:
-                                  Colors.grey.shade200,
+                              color: Colors.grey.shade200,
                             ),
                           ),
-
                           child: Row(
                             children: [
-
                               CircleAvatar(
-                                backgroundColor:
-                                    receita
-                                        ? Colors.green
-                                            .withValues(
-                                                alpha:
-                                                    0.12)
-                                        : Colors.red
-                                            .withValues(
-                                                alpha:
-                                                    0.12),
-
+                                backgroundColor: receita
+                                    ? Colors.green.withValues(alpha: 0.12)
+                                    : Colors.red.withValues(alpha: 0.12),
                                 child: Icon(
                                   receita
                                       ? Icons.arrow_downward
                                       : Icons.arrow_upward,
-                                  color: receita
-                                      ? Colors.green
-                                      : Colors.red,
+                                  color: receita ? Colors.green : Colors.red,
                                 ),
                               ),
-
                               const SizedBox(width: 14),
-
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment
-                                          .start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-
                                     Text(
-                                      t['descricao'] ??
+                                      t['descricao']?.toString() ??
                                           'Sem descrição',
-                                      style:
-                                          const TextStyle(
-                                        fontWeight:
-                                            FontWeight
-                                                .bold,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                         fontSize: 15,
                                       ),
                                     ),
-
-                                    const SizedBox(
-                                        height: 4),
-
+                                    const SizedBox(height: 4),
                                     Text(
-                                      t['categoria'] ??
-                                          'Geral',
-                                      style:
-                                          TextStyle(
-                                        color: Colors
-                                            .grey[600],
+                                      t['categoria']?.toString() ?? 'Geral',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
                                       ),
                                     ),
-
-                                    const SizedBox(
-                                        height: 4),
-
+                                    const SizedBox(height: 4),
                                     Text(
-                                      DateFormat(
-                                              'dd/MM/yyyy')
-                                          .format(
-                                        DateTime.parse(
-                                            t['data']),
+                                      DateFormat('dd/MM/yyyy').format(
+                                        DateTime.tryParse(
+                                              t['data_transacao']?.toString() ?? '',
+                                            ) ??
+                                            DateTime.now(),
                                       ),
-                                      style:
-                                          TextStyle(
-                                        color: Colors
-                                            .grey[500],
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
                                         fontSize: 12,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-
                               Text(
-                                currencyFormat
-                                    .format(valor),
-
+                                currencyFormat.format(valor),
                                 style: TextStyle(
-                                  fontWeight:
-                                      FontWeight.bold,
-                                  color: receita
-                                      ? Colors.green
-                                      : Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  color: receita ? Colors.green : Colors.red,
                                 ),
                               ),
                             ],

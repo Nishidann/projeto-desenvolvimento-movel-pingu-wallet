@@ -128,6 +128,16 @@ class _RelatorioPageState extends State<RelatorioPage> {
               onTap: () => Navigator.pop(
                   context), // Já está na tela de relatório, apenas fecha o menu
             ),
+            ListTile(
+              leading: const Icon(Icons.history,
+                color: Color(0xFF1E3A8A)),
+              title: const Text(
+                "Histórico",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onTap: () =>
+                Navigator.pushNamed(context, '/historico'),
+            ),
             const Spacer(),
             const Divider(),
             ListTile(

@@ -568,17 +568,16 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/relatorio'),
             ),
-<<<<<<< Updated upstream
-=======
             ListTile(
-              leading: const Icon(Icons.history, color: Color(0xFF1E3A8A)),
-              title: const Text("Histórico",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              leading: const Icon(Icons.history,
+                color: Color(0xFF1E3A8A)),
+              title: const Text(
+                "Histórico",
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               onTap: () =>
-                  Navigator.pushReplacementNamed(context, '/historico'),
+                Navigator.pushReplacementNamed(context, '/historico'),
             ),
->>>>>>> Stashed changes
             const Spacer(),
             const Divider(),
             ListTile(
