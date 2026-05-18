@@ -5,9 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../transaction/transaction_page.dart';
 import '../../services/api_service.dart';
-
-// O Enum fica fora da classe para ser acessível globalmente
-enum ChartPeriod { week, month, threeMonths, year }
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AppColors {
   static const Color background = Color(0xFFF8FAFC);
@@ -32,15 +30,27 @@ class _DashboardPageState extends State<DashboardPage> {
   int? usuarioId;
 
   List<dynamic> _transacoes = [];
+  List<dynamic> _gastosPorCategoria = [];
   bool _isLoading = true;
-  bool _mostrarTodasAsTransacoes = false;
+  bool _mostrarTodasAsTransacoes =
+      false; // Controla se a lista está expandida ou minimizada
   String _nomeUsuario = 'Usuário';
+  String _emailUsuario = 'pinguim@wallet.com';
 
   double _totalBalance = 0.0;
   double _monthlyIncome = 0.0;
   double _monthlyExpenses = 0.0;
 
-  ChartPeriod _selectedPeriod = ChartPeriod.month;
+  static const List<Color> _categoryColors = [
+    Color(0xFF1E3A8A),
+    Color(0xFFFF7A00),
+    Color(0xFF10B981),
+    Color(0xFFEF4444),
+    Color(0xFF8B5CF6),
+    Color(0xFFF59E0B),
+    Color(0xFF06B6D4),
+    Color(0xFFEC4899),
+  ];
 
   @override
   void initState() {
@@ -50,22 +60,50 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _carregarDadosIniciais() async {
     setState(() => _isLoading = true);
+
+    // Busca o ID do token salvo no SharedPreferences
     final idDoToken = await _apiService.getUsuarioId();
 
     if (idDoToken != null) {
-      setState(() => usuarioId = idDoToken);
+      setState(() {
+        usuarioId = idDoToken;
+      });
+      // Agora que temos o ID, carregamos o resto
       await _carregarUsuario();
       await _carregarTransacoes();
-      _calcularResumoGeral();
+      await _carregarGastosPorCategoria();
+      _calcularResumoMensal();
     } else {
+      // Se não tiver token ou ID, volta para o login
       if (mounted) Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
   Future<void> _carregarUsuario() async {
     final prefs = await SharedPreferences.getInstance();
+
+    String? emailEncontrado = prefs.getString('email_usuario');
+
+    // Se o e-mail guardado veio como "usuario@wallet.com" ou nulo, vamos extrair do JWT!
+    if (emailEncontrado == null || emailEncontrado == 'usuario@wallet.com') {
+      final token = prefs.getString('jwt_token');
+      if (token != null && !JwtDecoder.isExpired(token)) {
+        try {
+          Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+          // O seu payload do JWT do Node.js geralmente injeta o campo "email" ou "emailUsuario"
+          if (decodedToken.containsKey('email')) {
+            emailEncontrado = decodedToken['email'];
+          }
+        } catch (e) {
+          debugPrint("Erro ao extrair e-mail do JWT: $e");
+        }
+      }
+    }
+
     setState(() {
       _nomeUsuario = prefs.getString('nome_usuario') ?? 'Daniel';
+      // Se encontrou o e-mail real usa ele, senão mantém o pinguim genérico por segurança
+      _emailUsuario = emailEncontrado ?? 'pinguim@wallet.com';
     });
   }
 
@@ -74,166 +112,439 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final dados = await _apiService.obterTransacoes(usuarioId!);
       setState(() {
+        // Forçamos a conversão limpa para garantir que o Flutter não rejeite o tipo de dado da lista
         _transacoes = List<dynamic>.from(dados);
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      print('Erro ao carregar transações: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      print('Erro ao carregar transações no Dashboard: $e');
     }
   }
 
-  void _calcularResumoGeral() {
-    double inc = 0.0;
-    double exp = 0.0;
+  Future<void> _carregarGastosPorCategoria() async {
+    try {
+      final dados = await _apiService.obterGastosPorCategoria(usuarioId!);
+      setState(() {
+        _gastosPorCategoria = dados;
+      });
+    } catch (e) {
+      print('Erro ao carregar gastos por categoria: $e');
+    }
+  }
+
+  void _calcularResumoMensal() {
+    double income = 0.0;
+    double expenses = 0.0;
+
     for (var t in _transacoes) {
-      final valor = double.tryParse(t['valor']?.toString() ?? '0') ?? 0.0;
-      final tipo = t['tipo']?.toString().toLowerCase() ?? '';
-      if (tipo == 'receita') inc += valor;
-      else if (tipo == 'despesa') exp += valor;
-    }
-    setState(() {
-      _monthlyIncome = inc;
-      _monthlyExpenses = exp;
-      _totalBalance = inc - exp;
-    });
-  }
+      if (t != null && t['valor'] != null) {
+        final valor = double.tryParse(t['valor'].toString()) ?? 0.0;
+        final tipoTransacao = t['tipo'].toString().trim().toLowerCase();
 
-  List<FlSpot> _gerarSpotsDoGrafico() {
-    if (_transacoes.isEmpty) return [const FlSpot(0, 0)];
-
-    // 1. Ordenar transações cronologicamente
-    final ordenadas = List.from(_transacoes);
-    ordenadas.sort((a, b) {
-      final dA = DateTime.tryParse(a['dataTransacao']?.toString() ?? '') ?? DateTime.now();
-      final dB = DateTime.tryParse(b['dataTransacao']?.toString() ?? '') ?? DateTime.now();
-      return dA.compareTo(dB);
-    });
-
-    DateTime now = DateTime.now();
-    DateTime inicio;
-    switch (_selectedPeriod) {
-      case ChartPeriod.week: inicio = now.subtract(const Duration(days: 7)); break;
-      case ChartPeriod.month: inicio = now.subtract(const Duration(days: 30)); break;
-      case ChartPeriod.threeMonths: inicio = now.subtract(const Duration(days: 90)); break;
-      case ChartPeriod.year: inicio = DateTime(now.year - 1, now.month, now.day); break;
-    }
-
-    double saldoAcumulado = 0;
-    Map<String, double> saldoPorDia = {};
-
-    // 2. Lógica de Agrupamento por Dia
-    for (var t in ordenadas) {
-      final dataFull = DateTime.tryParse(t['dataTransacao']?.toString() ?? '') ?? DateTime.now();
-      final valor = double.tryParse(t['valor']?.toString() ?? '0') ?? 0.0;
-      final tipo = t['tipo']?.toString().toLowerCase() ?? '';
-      
-      // Atualiza saldo histórico independente do filtro
-      if (tipo == 'receita') saldoAcumulado += valor;
-      else saldoAcumulado -= valor;
-
-      // Se a transação estiver dentro do filtro, salva no mapa
-      if (dataFull.isAfter(inicio) || dataFull.isAtSameMomentAs(inicio)) {
-        final diaChave = DateFormat('yyyy-MM-dd').format(dataFull);
-        saldoPorDia[diaChave] = saldoAcumulado; // Salva o saldo final daquele dia
+        if (tipoTransacao == 'receita') {
+          income += valor;
+        } else if (tipoTransacao == 'despesa') {
+          expenses += valor;
+        }
       }
     }
 
+    setState(() {
+      _monthlyIncome = income;
+      _monthlyExpenses = expenses;
+      _totalBalance = income - expenses;
+    });
+  }
+
+  // Gráfico da esquerda para a direita no sentido do tempo
+  List<FlSpot> _gerarSpotsDoGrafico() {
+    if (_transacoes.isEmpty) {
+      return [
+        const FlSpot(0, 0.0),
+        const FlSpot(1, 0.0),
+      ];
+    }
+
     List<FlSpot> spots = [];
-    
-    // Se não houver dados no período, inicia com saldo 0 no dia "inicio"
-    if (saldoPorDia.isEmpty) {
-      spots.add(FlSpot(inicio.millisecondsSinceEpoch.toDouble(), 0));
-    } else {
-      // Converte o mapa em spots
-      saldoPorDia.forEach((dataStr, saldo) {
-        final dataObj = DateTime.parse(dataStr);
-        spots.add(FlSpot(dataObj.millisecondsSinceEpoch.toDouble(), saldo));
-      });
+    double saldoAcumulado = 0.0;
+
+    final transacoesInvertidas = _transacoes.reversed.toList();
+
+    for (int i = 0; i < transacoesInvertidas.length && i < 7; i++) {
+      final t = transacoesInvertidas[i];
+      if (t != null && t['valor'] != null) {
+        final double valor = double.tryParse(t['valor'].toString()) ?? 0.0;
+        final tipoTransacao = t['tipo'].toString().trim().toLowerCase();
+
+        if (tipoTransacao == 'despesa') {
+          saldoAcumulado -= valor;
+        } else if (tipoTransacao == 'receita') {
+          saldoAcumulado += valor;
+        }
+
+        spots.add(FlSpot(i.toDouble(), saldoAcumulado));
+      }
     }
 
-    // 3. Garante que o gráfico termina no dia de hoje
-    if (spots.isNotEmpty) {
-      spots.add(FlSpot(now.millisecondsSinceEpoch.toDouble(), saldoAcumulado));
+    // Garante que o gráfico nunca fica sem dados para desenhar
+    if (spots.isEmpty) {
+      spots = [const FlSpot(0, 0.0), const FlSpot(1, 0.0)];
     }
 
-    spots.sort((a, b) => a.x.compareTo(b.x));
     return spots;
   }
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final currencyFormat =
+        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final spots = _gerarSpotsDoGrafico();
+
+    double maxSpotY = spots.isNotEmpty
+        ? spots.map((s) => s.y).reduce((a, b) => a > b ? a : b)
+        : 1000.0;
+    // Garante que a escala não fique zerada se o saldo for menor ou igual a zero
+    if (maxSpotY <= 0) {
+      maxSpotY = 1000.0;
+    }
+    final maxYScale = maxSpotY * 1.2;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Pingu Wallet', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white)),
+        title: const Text(
+          'Pingu Wallet - Dashboard',
+          style: TextStyle(
+              fontWeight: FontWeight.w800, color: AppColors.textLight),
+        ),
         backgroundColor: AppColors.primary,
         elevation: 0,
       ),
-      body: _isLoading 
-      ? const Center(child: CircularProgressIndicator())
-      : RefreshIndicator(
-          onRefresh: _carregarDadosIniciais,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Card de Boas-vindas
+            Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.06),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // ENVOLVA A COLUNA DE TEXTOS COM EXPANDED
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Olá, $_nomeUsuario! 👋',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                          overflow: TextOverflow
+                              .ellipsis, // Evita quebrar se a janela for mini
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Resumo das suas finanças',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                      width: 12), // Pequeno respiro entre o texto e o ícone
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.icecream,
+                        color: AppColors.accent, size: 28),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Seção de Cards / Métricas
+            GridView.count(
+              crossAxisCount: 3,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 2.5,
               children: [
-                _buildWelcomeHeader(),
-                const SizedBox(height: 24),
-                _buildMetricsGrid(currencyFormat),
-                const SizedBox(height: 24),
-                _buildChartContainer(spots),
-                const SizedBox(height: 24),
-                _buildTransactionsList(currencyFormat),
+                _buildCard('Saldo Total', currencyFormat.format(_totalBalance),
+                    Colors.blue),
+                _buildCard('Receitas', currencyFormat.format(_monthlyIncome),
+                    Colors.green),
+                _buildCard('Despesas', currencyFormat.format(_monthlyExpenses),
+                    Colors.red),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+
+            // Gráfico de Evolução Patrimonial
+            SizedBox(
+              height: 190,
+              child: Card(
+                elevation: 0,
+                color: AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  side: BorderSide(color: Colors.grey.shade100, width: 1.5),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Evolução Patrimonial',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: LineChart(
+                          LineChartData(
+                            gridData: const FlGridData(show: false),
+                            titlesData: const FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            minX: 0,
+                            maxX: spots.isNotEmpty
+                                ? (spots.length - 1).toDouble()
+                                : 7,
+                            minY: 0,
+                            maxY: maxYScale,
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: spots,
+                                isCurved: true,
+                                color: AppColors.primary,
+                                barWidth: 4,
+                                isStrokeCapRound: true,
+                                dotData: FlDotData(
+                                  show: true,
+                                  getDotPainter:
+                                      (spot, percent, barData, index) =>
+                                          FlDotCirclePainter(
+                                    radius: 4,
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                    strokeColor: AppColors.primary,
+                                  ),
+                                ),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      AppColors.primary.withValues(alpha: 0.2),
+                                      AppColors.primary.withValues(alpha: 0.0),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Gráfico de Pizza - Gastos por Categoria
+            if (_gastosPorCategoria.isNotEmpty) ..._buildPieChartSection(),
+            const SizedBox(height: 24),
+
+            // Título Transações
+            const Text(
+              'Transações Recentes',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Histórico de Lançamentos
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _transacoes.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Text('Nenhuma transação encontrada.'),
+                        ),
+                      )
+                    : Column(
+                        // <--- ENVOLVEMOS EM UMA COLUMN PARA POR O BOTÃO DE EXPANDIR
+                        children: [
+                          ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            // Define a contagem baseada na variável de controle
+                            itemCount: _mostrarTodasAsTransacoes
+                                ? _transacoes.length
+                                : (_transacoes.length > 5
+                                    ? 5
+                                    : _transacoes.length),
+                            itemBuilder: (context, index) {
+                              final t = _transacoes[index];
+                              final isDespesa = t['tipo'] == 'despesa';
+                              final valor =
+                                  double.tryParse(t['valor'].toString()) ?? 0.0;
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor: isDespesa
+                                              ? Colors.red.shade50
+                                              : AppColors.success
+                                                  .withValues(alpha: 0.1),
+                                          child: Icon(
+                                            isDespesa
+                                                ? Icons.arrow_downward
+                                                : Icons.arrow_upward,
+                                            color: isDespesa
+                                                ? Colors.red.shade400
+                                                : AppColors.success,
+                                            size: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              t['descricao'] ?? 'Sem Descrição',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Text(
+                                              t['categoria'] ?? 'Geral',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${isDespesa ? '-' : '+'} ${currencyFormat.format(valor)}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        color: isDespesa
+                                            ? Colors.red.shade400
+                                            : AppColors.success,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          // BOTÃO DINÂMICO: Expande ou minimiza a própria lista do Dashboard
+                          if (_transacoes.length > 5)
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _mostrarTodasAsTransacoes =
+                                      !_mostrarTodasAsTransacoes;
+                                });
+                              },
+                              icon: Icon(
+                                _mostrarTodasAsTransacoes
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                color: AppColors.primary,
+                              ),
+                              label: Text(
+                                _mostrarTodasAsTransacoes
+                                    ? "Mostrar menos"
+                                    : "Ver histórico completo",
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(
+                  context, '/historico'), // Rota da tela do Beani
+              child: const Text("Ver histórico completo →"),
+            )
+          ],
         ),
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.accent,
         onPressed: () {
           if (usuarioId != null) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionPage(usuarioId: usuarioId!))).then((_) => _carregarDadosIniciais());
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TransactionPage(usuarioId: usuarioId!),
+              ),
+            ).then((_) => _carregarDadosIniciais());
+          } else {
+            print("Erro: Usuário não identificado.");
           }
         },
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget _buildWelcomeHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Olá, $_nomeUsuario! 👋', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-        const Text('Seus gastos estão sob controle.', style: TextStyle(color: Colors.grey, fontSize: 14)),
-      ],
-    );
-  }
-
-  Widget _buildMetricsGrid(NumberFormat fmt) {
-    return Row(
-      children: [
-        _miniCard('Saldo', fmt.format(_totalBalance), AppColors.primary),
-        const SizedBox(width: 10),
-        _miniCard('Entradas', fmt.format(_monthlyIncome), AppColors.success),
-        const SizedBox(width: 10),
-        _miniCard('Saídas', fmt.format(_monthlyExpenses), Colors.redAccent),
-      ],
-    );
-  }
-
-  Widget _miniCard(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
+      drawer: Drawer(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
@@ -290,116 +601,157 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildChartContainer(List<FlSpot> spots) {
-    double diffX = spots.last.x - spots.first.x;
-    double intervalX = diffX > 0 ? diffX / 3 : 86400000;
+  List<Widget> _buildPieChartSection() {
+    final total = _gastosPorCategoria.fold<double>(
+      0.0,
+      (sum, item) => sum + (double.tryParse(item['total'].toString()) ?? 0.0),
+    );
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
-      child: Column(
-        children: [
-          SegmentedButton<ChartPeriod>(
-            segments: const [
-              ButtonSegment(value: ChartPeriod.week, label: Text('7D')),
-              ButtonSegment(value: ChartPeriod.month, label: Text('30D')),
-              ButtonSegment(value: ChartPeriod.threeMonths, label: Text('3M')),
-              ButtonSegment(value: ChartPeriod.year, label: Text('1A')),
-            ],
-            selected: {_selectedPeriod},
-            onSelectionChanged: (val) => setState(() => _selectedPeriod = val.first),
-            style: const ButtonStyle(visualDensity: VisualDensity.compact),
+    final sections = <PieChartSectionData>[];
+    for (int i = 0; i < _gastosPorCategoria.length; i++) {
+      final item = _gastosPorCategoria[i];
+      final valor = double.tryParse(item['total'].toString()) ?? 0.0;
+      final percent = total > 0 ? (valor / total * 100) : 0.0;
+      final color = _categoryColors[i % _categoryColors.length];
+      sections.add(
+        PieChartSectionData(
+          value: valor,
+          title: '${percent.toStringAsFixed(1)}%',
+          color: color,
+          radius: 60,
+          titleStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
-          const SizedBox(height: 30),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(),
-                  rightTitles: const AxisTitles(),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: intervalX,
-                      getTitlesWidget: (v, m) => Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(DateFormat('dd/MM').format(DateTime.fromMillisecondsSinceEpoch(v.toInt())), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                      ),
-                    ),
+        ),
+      );
+    }
+
+    return [
+      const Text(
+        'Gastos por Categoria',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: AppColors.primary,
+        ),
+      ),
+      const SizedBox(height: 14),
+      Card(
+        elevation: 0,
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: BorderSide(color: Colors.grey.shade100, width: 1.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              SizedBox(
+                height: 180,
+                width: 180,
+                child: PieChart(
+                  PieChartData(
+                    sections: sections,
+                    centerSpaceRadius: 36,
+                    sectionsSpace: 3,
                   ),
                 ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: AppColors.primary,
-                    barWidth: 4,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(show: true, color: AppColors.primary.withOpacity(0.1)),
-                  ),
-                ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionsList(NumberFormat fmt) {
-    // Aqui aplicamos o limite de 5 itens que você pediu
-    final lista = _mostrarTodasAsTransacoes ? _transacoes : _transacoes.take(5).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Transações Recentes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        if (_transacoes.isEmpty)
-          const Center(child: Text('Nenhuma transação registrada.'))
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: lista.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, i) {
-              final t = lista[i];
-              final isDesp = t['tipo']?.toString().toLowerCase() == 'despesa';
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade100)),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 20),
+              // CORRIGIDO: Envolvemos a Column com Expanded para eliminar de vez o estouro de layout!
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(_gastosPorCategoria.length, (i) {
+                    final item = _gastosPorCategoria[i];
+                    final color = _categoryColors[i % _categoryColors.length];
+                    final valor =
+                        double.tryParse(item['total'].toString()) ?? 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
                         children: [
-                          Text(t['descricao']?.toString() ?? 'Sem descrição', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text(t['categoria']?.toString() ?? 'Geral', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // CORRIGIDO: Envolvemos o nome da categoria com Expanded para restringir o espaço horizontal
+                          Expanded(
+                            child: Text(
+                              item['categoria'] ?? 'Outros',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow
+                                  .ellipsis, // Corta textos gigantes com '...'
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            NumberFormat.currency(
+                                    locale: 'pt_BR', symbol: 'R\$')
+                                .format(valor),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    Text(
-                      '${isDesp ? '-' : '+'} ${fmt.format(double.tryParse(t['valor']?.toString() ?? '0') ?? 0.0)}',
-                      style: TextStyle(color: isDesp ? Colors.redAccent : AppColors.success, fontWeight: FontWeight.w900),
-                    ),
-                  ],
+                    );
+                  }),
                 ),
-              );
-            },
+              ),
+            ],
           ),
-        if (_transacoes.length > 5)
-          Center(
-            child: TextButton(
-              onPressed: () => setState(() => _mostrarTodasAsTransacoes = !_mostrarTodasAsTransacoes),
-              child: Text(_mostrarTodasAsTransacoes ? "Ver menos" : "Ver tudo (${_transacoes.length})"),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildCard(String title, String value, Color colorType) {
+    return Card(
+      elevation: 0,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
-          ),
-      ],
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: colorType == Colors.blue
+                    ? AppColors.primary
+                    : colorType == Colors.green
+                        ? AppColors.success
+                        : Colors.red.shade400,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
