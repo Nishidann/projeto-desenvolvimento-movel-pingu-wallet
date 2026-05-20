@@ -171,4 +171,70 @@ class ApiService {
     }
     return null;
   }
+
+  // ==========================
+  // FUNÇÕES DE CATEGORIAS
+  // ==========================
+  Future<List<dynamic>> listarCategorias(int usuarioId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/categorias/usuario/$usuarioId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('Erro ao listar categorias: $e');
+    }
+    return [];
+  }
+
+  Future<bool> adicionarCategoria({
+    required int usuarioId,
+    required String nome,
+    required String tipo,
+    required String icone,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/categorias'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'usuarioId': usuarioId, 'nome': nome, 'tipo': tipo, 'icone': icone}),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Erro ao adicionar categoria: $e');
+      return false;
+    }
+  }
+
+  Future<bool> editarCategoria({
+    required int id,
+    required String nome,
+    required String icone,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/categorias/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'nome': nome, 'icone': icone}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao editar categoria: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deletarCategoria(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/categorias/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao deletar categoria: $e');
+      return false;
+    }
+  }
 }

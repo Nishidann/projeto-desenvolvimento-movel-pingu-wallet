@@ -16,6 +16,7 @@ class _RegistroPageState extends State<RegistroPage> {
   final _cepController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
+  final _confirmarSenhaController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -26,9 +27,20 @@ class _RegistroPageState extends State<RegistroPage> {
         _cpfController.text.isEmpty ||
         _cepController.text.isEmpty ||
         _emailController.text.isEmpty ||
-        _senhaController.text.isEmpty) {
+        _senhaController.text.isEmpty ||
+        _confirmarSenhaController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, preencha todos os campos.')),
+      );
+      return;
+    }
+
+    if (_senhaController.text != _confirmarSenhaController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('As senhas não coincidem.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -144,6 +156,14 @@ class _RegistroPageState extends State<RegistroPage> {
                   controller: _senhaController,
                   obscureText: true,
                   decoration: const InputDecoration(labelText: 'Senha', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 15),
+
+                // Confirmar Senha
+                TextField(
+                  controller: _confirmarSenhaController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Confirmar Senha', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 30),
 

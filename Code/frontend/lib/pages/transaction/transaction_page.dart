@@ -34,31 +34,105 @@ class _TransactionPageState extends State<TransactionPage> {
   String _categoriaSelecionada = '';
   String _tipo = 'despesa';
   bool _isLoading = false;
+  bool _isLoadingCategorias = true;
   DateTime _dataSelecionada = DateTime.now();
+  List<dynamic> _categoriasCarregadas = [];
 
   final ApiService _apiService = ApiService();
 
-  List<Map<String, dynamic>> get _categorias {
-    if (_tipo == 'despesa') {
-      return [
-        {'nome': 'Alimentação', 'icon': Icons.restaurant},
-        {'nome': 'Transporte', 'icon': Icons.directions_car},
-        {'nome': 'Moradia', 'icon': Icons.home},
-        {'nome': 'Saúde', 'icon': Icons.favorite},
-        {'nome': 'Educação', 'icon': Icons.school},
-        {'nome': 'Lazer', 'icon': Icons.sports_esports},
-        {'nome': 'Roupas', 'icon': Icons.checkroom},
-        {'nome': 'Assinaturas', 'icon': Icons.subscriptions},
-        {'nome': 'Outros', 'icon': Icons.more_horiz},
-      ];
-    } else {
-      return [
-        {'nome': 'Salário', 'icon': Icons.work},
-        {'nome': 'Freelance', 'icon': Icons.laptop},
-        {'nome': 'Investimento', 'icon': Icons.trending_up},
-        {'nome': 'Presente', 'icon': Icons.card_giftcard},
-        {'nome': 'Outros', 'icon': Icons.more_horiz},
-      ];
+  static const Map<String, IconData> _iconMap = {
+    // Alimentação
+    'restaurant': Icons.restaurant,
+    'fastfood': Icons.fastfood,
+    'local_cafe': Icons.local_cafe,
+    'local_bar': Icons.local_bar,
+    'bakery_dining': Icons.bakery_dining,
+    'set_meal': Icons.set_meal,
+    // Transporte
+    'directions_car': Icons.directions_car,
+    'directions_bus': Icons.directions_bus,
+    'directions_bike': Icons.directions_bike,
+    'local_taxi': Icons.local_taxi,
+    'train': Icons.train,
+    'flight': Icons.flight,
+    'local_gas_station': Icons.local_gas_station,
+    'local_parking': Icons.local_parking,
+    // Casa
+    'home': Icons.home,
+    'home_repair_service': Icons.home_repair_service,
+    'water_drop': Icons.water_drop,
+    'wifi': Icons.wifi,
+    'electrical_services': Icons.electrical_services,
+    // Saúde
+    'favorite': Icons.favorite,
+    'local_hospital': Icons.local_hospital,
+    'local_pharmacy': Icons.local_pharmacy,
+    'fitness_center': Icons.fitness_center,
+    'self_improvement': Icons.self_improvement,
+    'spa': Icons.spa,
+    // Educação
+    'school': Icons.school,
+    'book': Icons.book,
+    'science': Icons.science,
+    'laptop': Icons.laptop,
+    'computer': Icons.computer,
+    // Entretenimento
+    'sports_esports': Icons.sports_esports,
+    'movie': Icons.movie,
+    'music_note': Icons.music_note,
+    'theater_comedy': Icons.theater_comedy,
+    'palette': Icons.palette,
+    'camera_alt': Icons.camera_alt,
+    // Compras
+    'shopping_cart': Icons.shopping_cart,
+    'checkroom': Icons.checkroom,
+    'storefront': Icons.storefront,
+    // Finanças
+    'attach_money': Icons.attach_money,
+    'savings': Icons.savings,
+    'account_balance': Icons.account_balance,
+    'credit_card': Icons.credit_card,
+    'payments': Icons.payments,
+    'trending_up': Icons.trending_up,
+    'percent': Icons.percent,
+    // Trabalho & Renda
+    'work': Icons.work,
+    'business_center': Icons.business_center,
+    'card_giftcard': Icons.card_giftcard,
+    // Esportes & Lazer
+    'sports_soccer': Icons.sports_soccer,
+    'sports_basketball': Icons.sports_basketball,
+    'sports_tennis': Icons.sports_tennis,
+    'directions_run': Icons.directions_run,
+    'beach_access': Icons.beach_access,
+    'hiking': Icons.hiking,
+    // Tecnologia
+    'smartphone': Icons.smartphone,
+    'headphones': Icons.headphones,
+    'gamepad': Icons.gamepad,
+    'subscriptions': Icons.subscriptions,
+    // Outros
+    'pets': Icons.pets,
+    'celebration': Icons.celebration,
+    'volunteer_activism': Icons.volunteer_activism,
+    'star': Icons.star,
+    'label': Icons.label,
+    'more_horiz': Icons.more_horiz,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarCategorias();
+  }
+
+  Future<void> _carregarCategorias() async {
+    final categorias = await _apiService.listarCategorias(widget.usuarioId);
+    if (mounted) {
+      setState(() {
+        _categoriasCarregadas = categorias;
+        _isLoadingCategorias = false;
+      });
     }
   }
 
@@ -343,6 +417,55 @@ class _TransactionPageState extends State<TransactionPage> {
 
   Widget _dropdownCategoria() {
     final corAtiva = _tipo == 'despesa' ? Colors.red.shade400 : AppColors.success;
+
+    if (_isLoadingCategorias) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200, width: 1),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.secondary),
+            ),
+            const SizedBox(width: 12),
+            Text('Carregando categorias...', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+          ],
+        ),
+      );
+    }
+
+    final categoriasDoTipo =
+        _categoriasCarregadas.where((c) => c['tipo'] == _tipo).toList();
+
+    if (categoriasDoTipo.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.orange.shade200, width: 1),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, size: 20, color: Colors.orange.shade400),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Sem categorias de $_tipo. Crie em "Categorias" no menu.',
+                style: TextStyle(color: Colors.orange.shade700, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
@@ -369,12 +492,13 @@ class _TransactionPageState extends State<TransactionPage> {
           ),
           isExpanded: true,
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade500),
-          items: _categorias.map((cat) {
+          items: categoriasDoTipo.map((cat) {
+            final iconData = _iconMap[cat['icone']] ?? Icons.label;
             return DropdownMenuItem<String>(
               value: cat['nome'] as String,
               child: Row(
                 children: [
-                  Icon(cat['icon'] as IconData, size: 20, color: corAtiva),
+                  Icon(iconData, size: 20, color: corAtiva),
                   const SizedBox(width: 12),
                   Text(
                     cat['nome'] as String,
