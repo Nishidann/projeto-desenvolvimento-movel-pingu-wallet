@@ -70,8 +70,10 @@ class _LoginPageState extends State<LoginPage> {
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.account_balance_wallet,
-                      size: 80, color: Colors.white),
+                  Text(
+                    '🐧',
+                    style: TextStyle(fontSize: 90),
+                  ),
                   SizedBox(height: 20),
                   Text("PINGU WALLET",
                       style: TextStyle(

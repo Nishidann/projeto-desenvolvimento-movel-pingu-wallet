@@ -5,6 +5,7 @@ import 'pages/login/registro_page.dart';
 import 'pages/dashboard/dashboard_page.dart';
 import 'pages/relatorio/relatorio_page.dart';
 import 'pages/historico/historico_page.dart';
+import 'pages/categorias/categoria_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,7 @@ class PinguWallet extends StatelessWidget {
         '/home': (context) => const DashboardPage(),
         '/relatorio': (context) => const RelatorioPage(),
         '/historico': (context) => const HistoricoPage(),
+        '/categorias': (context) => const CategoriaPage(),
       },
     );
   }

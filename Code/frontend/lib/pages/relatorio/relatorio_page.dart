@@ -138,6 +138,15 @@ class _RelatorioPageState extends State<RelatorioPage> {
               onTap: () =>
                 Navigator.pushNamed(context, '/historico'),
             ),
+            ListTile(
+              leading: const Icon(Icons.category, color: Color(0xFF1E3A8A)),
+              title: const Text(
+                "Categorias",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onTap: () =>
+                Navigator.pushReplacementNamed(context, '/categorias'),
+            ),
             const Spacer(),
             const Divider(),
             ListTile(
