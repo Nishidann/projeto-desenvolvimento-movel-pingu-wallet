@@ -160,8 +160,8 @@ class _CategoriaPageState extends State<CategoriaPage>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) => Dialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -236,21 +236,17 @@ class _CategoriaPageState extends State<CategoriaPage>
                   children: iconMap.entries.map((entry) {
                     final isSelected = iconeSelecionado == entry.key;
                     return GestureDetector(
-                      onTap: () => setStateDialog(
-                          () => iconeSelecionado = entry.key),
+                      onTap: () =>
+                          setStateDialog(() => iconeSelecionado = entry.key),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? corTipo
-                              : Colors.grey.shade100,
+                          color: isSelected ? corTipo : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected
-                                ? corTipo
-                                : Colors.grey.shade200,
+                            color: isSelected ? corTipo : Colors.grey.shade200,
                             width: isSelected ? 2 : 1,
                           ),
                           boxShadow: isSelected
@@ -266,9 +262,8 @@ class _CategoriaPageState extends State<CategoriaPage>
                         child: Icon(
                           entry.value,
                           size: 22,
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.grey.shade600,
+                          color:
+                              isSelected ? Colors.white : Colors.grey.shade600,
                         ),
                       ),
                     );
@@ -281,15 +276,13 @@ class _CategoriaPageState extends State<CategoriaPage>
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           side: BorderSide(color: Colors.grey.shade300),
                         ),
                         child: const Text('Cancelar',
-                            style:
-                                TextStyle(fontWeight: FontWeight.w600)),
+                            style: TextStyle(fontWeight: FontWeight.w600)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -298,8 +291,7 @@ class _CategoriaPageState extends State<CategoriaPage>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: corTipo,
                           foregroundColor: Colors.white,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
@@ -325,8 +317,7 @@ class _CategoriaPageState extends State<CategoriaPage>
                         },
                         child: Text(
                           isEdicao ? 'Salvar' : 'Adicionar',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -344,8 +335,7 @@ class _CategoriaPageState extends State<CategoriaPage>
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(28),
           child: Column(
@@ -357,23 +347,20 @@ class _CategoriaPageState extends State<CategoriaPage>
                   color: _danger.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.delete_outline,
-                    color: _danger, size: 32),
+                child:
+                    const Icon(Icons.delete_outline, color: _danger, size: 32),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Deletar Categoria',
                 style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: _primary),
+                    fontSize: 18, fontWeight: FontWeight.w800, color: _primary),
               ),
               const SizedBox(height: 8),
               Text(
                 'Tem certeza que deseja deletar "$nome"?',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Colors.grey.shade600, fontSize: 14),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               ),
               const SizedBox(height: 24),
               Row(
@@ -382,15 +369,13 @@ class _CategoriaPageState extends State<CategoriaPage>
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         side: BorderSide(color: Colors.grey.shade300),
                       ),
                       child: const Text('Cancelar',
-                          style:
-                              TextStyle(fontWeight: FontWeight.w600)),
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -399,8 +384,7 @@ class _CategoriaPageState extends State<CategoriaPage>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _danger,
                         foregroundColor: Colors.white,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
@@ -411,8 +395,7 @@ class _CategoriaPageState extends State<CategoriaPage>
                         _carregarDados();
                       },
                       child: const Text('Deletar',
-                          style:
-                              TextStyle(fontWeight: FontWeight.w700)),
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],
@@ -426,8 +409,7 @@ class _CategoriaPageState extends State<CategoriaPage>
 
   Widget _buildHeaderCard(int count, String tipo) {
     final cor = tipo == 'despesa' ? _danger : _success;
-    final icon =
-        tipo == 'despesa' ? Icons.arrow_downward : Icons.arrow_upward;
+    final icon = tipo == 'despesa' ? Icons.arrow_downward : Icons.arrow_upward;
     final label = tipo == 'despesa' ? 'despesas' : 'receitas';
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
@@ -512,8 +494,7 @@ class _CategoriaPageState extends State<CategoriaPage>
                   const SizedBox(height: 6),
                   Text(
                     'Toque no botão + para criar a primeira',
-                    style: TextStyle(
-                        fontSize: 13, color: Colors.grey.shade400),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                   ),
                 ],
               ),
@@ -544,8 +525,8 @@ class _CategoriaPageState extends State<CategoriaPage>
                     ],
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 4),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     leading: Container(
                       width: 44,
                       height: 44,
@@ -582,8 +563,8 @@ class _CategoriaPageState extends State<CategoriaPage>
                         ),
                         const SizedBox(width: 8),
                         InkWell(
-                          onTap: () => _confirmarDeletar(
-                              cat['id'], cat['nome']),
+                          onTap: () =>
+                              _confirmarDeletar(cat['id'], cat['nome']),
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: const EdgeInsets.all(8),
@@ -630,8 +611,8 @@ class _CategoriaPageState extends State<CategoriaPage>
           unselectedLabelColor: Colors.white60,
           indicatorColor: _accent,
           indicatorWeight: 3,
-          labelStyle: const TextStyle(
-              fontWeight: FontWeight.w700, fontSize: 13),
+          labelStyle:
+              const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
           tabs: const [
             Tab(icon: Icon(Icons.arrow_downward, size: 18), text: 'Despesas'),
             Tab(icon: Icon(Icons.arrow_upward, size: 18), text: 'Receitas'),
@@ -654,8 +635,7 @@ class _CategoriaPageState extends State<CategoriaPage>
               leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
               title: const Text('Dashboard',
                   style: TextStyle(fontWeight: FontWeight.bold)),
-              onTap: () =>
-                  Navigator.pushReplacementNamed(context, '/home'),
+              onTap: () => Navigator.pushReplacementNamed(context, '/home'),
             ),
             ListTile(
               leading: const Icon(Icons.bar_chart, color: Color(0xFF1E3A8A)),
@@ -679,6 +659,12 @@ class _CategoriaPageState extends State<CategoriaPage>
               selectedTileColor:
                   const Color(0xFF1E3A8A).withValues(alpha: 0.08),
               onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.ads_click, color: Color(0xFF1E3A8A)),
+              title: const Text('Metas e Objetivos',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
             const Spacer(),
             const Divider(),
@@ -715,8 +701,7 @@ class _CategoriaPageState extends State<CategoriaPage>
         foregroundColor: Colors.white,
         elevation: 4,
         onPressed: () {
-          final tipo =
-              _tabController.index == 0 ? 'despesa' : 'receita';
+          final tipo = _tabController.index == 0 ? 'despesa' : 'receita';
           _mostrarDialogCategoria(tipo: tipo);
         },
         icon: const Icon(Icons.add),

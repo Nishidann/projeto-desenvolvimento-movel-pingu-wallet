@@ -112,51 +112,67 @@ class _RelatorioPageState extends State<RelatorioPage> {
                 backgroundColor: Colors.white,
                 child: Icon(Icons.person, color: Color(0xFF1E3A8A), size: 36),
               ),
-              accountName: Text(_nomeUsuario),
+              accountName: Text(
+                  _nomeUsuario), // Certifique-se de que a tela possui a variável _nomeUsuario carregada
               accountEmail: Text(_emailUsuario),
             ),
             ListTile(
               leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
-              title: const Text("Dashboard",
+              title: const Text('Dashboard',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () => Navigator.pushReplacementNamed(context, '/home'),
             ),
             ListTile(
               leading: const Icon(Icons.bar_chart, color: Color(0xFF1E3A8A)),
-              title: const Text("Relatório Mensal",
+              title: const Text('Relatório Mensal',
                   style: TextStyle(fontWeight: FontWeight.bold)),
-              onTap: () => Navigator.pop(
-                  context), // Já está na tela de relatório, apenas fecha o menu
+              selected: ModalRoute.of(context)?.settings.name == '/relatorio',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
+              onTap: () {
+                if (ModalRoute.of(context)?.settings.name == '/relatorio') {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacementNamed(context, '/relatorio');
+                }
+              },
             ),
             ListTile(
-              leading: const Icon(Icons.history,
-                color: Color(0xFF1E3A8A)),
-              title: const Text(
-                "Histórico",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              onTap: () =>
-                Navigator.pushNamed(context, '/historico'),
+              leading: const Icon(Icons.history, color: Color(0xFF1E3A8A)),
+              title: const Text('Histórico',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/historico',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
+              onTap: () {
+                if (ModalRoute.of(context)?.settings.name == '/historico') {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacementNamed(context, '/historico');
+                }
+              },
             ),
             ListTile(
               leading: const Icon(Icons.category, color: Color(0xFF1E3A8A)),
-              title: const Text(
-                "Categorias",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              title: const Text('Categorias',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () =>
-                Navigator.pushReplacementNamed(context, '/categorias'),
+                  Navigator.pushReplacementNamed(context, '/categorias'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.ads_click, color: Color(0xFF1E3A8A)),
+              title: const Text('Metas e Objetivos',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
             const Spacer(),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text("Sair da Conta",
+              title: const Text('Sair da Conta',
                   style: TextStyle(
                       color: Colors.redAccent, fontWeight: FontWeight.bold)),
               onTap: () async {
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.clear(); // Limpa tokens e desloga
+                await prefs.clear();
                 if (context.mounted) {
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/login', (route) => false);
