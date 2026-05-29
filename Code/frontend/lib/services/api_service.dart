@@ -138,6 +138,33 @@ class ApiService {
     }
   }
 
+  Future<bool> editarTransacao(int id, TransactionModel transacao) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/transacoes/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(transacao.toJson()),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao editar transação: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deletarTransacao(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/transacoes/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao excluir transação: $e');
+      return false;
+    }
+  }
+
   // ==========================
   // GASTOS POR CATEGORIA
   // ==========================
@@ -198,7 +225,12 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$baseUrl/categorias'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'usuarioId': usuarioId, 'nome': nome, 'tipo': tipo, 'icone': icone}),
+        body: jsonEncode({
+          'usuarioId': usuarioId,
+          'nome': nome,
+          'tipo': tipo,
+          'icone': icone
+        }),
       );
       return response.statusCode == 201;
     } catch (e) {
@@ -234,6 +266,77 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Erro ao deletar categoria: $e');
+      return false;
+    }
+  }
+
+  // ==========================
+  // METAS E OBJETIVOS
+  // ==========================
+  Future<List<dynamic>> obterMetas(int usuarioId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/metas/usuario/$usuarioId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('Erro ao buscar objetivos de poupança: $e');
+    }
+    return [];
+  }
+
+  Future<bool> cadastrarMeta({
+    required int usuarioId,
+    required String titulo,
+    required double alvo,
+    required double atual,
+    required String icone,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/metas'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'usuarioId': usuarioId,
+          'titulo': titulo,
+          'alvo': alvo,
+          'atual': atual,
+          'icone': icone,
+        }),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Erro ao enviar nova meta: $e');
+      return false;
+    }
+  }
+
+  Future<bool> editarMeta(
+      int id, String titulo, double alvo, double atual, String icone) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/metas/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(
+            {'titulo': titulo, 'alvo': alvo, 'atual': atual, 'icone': icone}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao atualizar meta: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deletarMeta(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/metas/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao remover meta: $e');
       return false;
     }
   }
