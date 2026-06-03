@@ -666,6 +666,13 @@ class _CategoriaPageState extends State<CategoriaPage>
                   style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: Color(0xFF1E3A8A)),
+              title: const Text('Configurações',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/configuracoes'),
+            ),
             const Spacer(),
             const Divider(),
             ListTile(

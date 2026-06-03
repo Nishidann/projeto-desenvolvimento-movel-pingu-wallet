@@ -200,6 +200,63 @@ class ApiService {
   }
 
   // ==========================
+  // PERFIL DO USUÁRIO
+  // ==========================
+  Future<Map<String, dynamic>?> getUsuarioPerfil(int id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuarios/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar perfil: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> atualizarUsuario({
+    required int id,
+    required String nome,
+    required int idade,
+    required String cep,
+    required String email,
+    String? senhaAtual,
+    String? novaSenha,
+  }) async {
+    try {
+      final Map<String, dynamic> body = {
+        'nome': nome,
+        'idade': idade,
+        'cep': cep,
+        'email': email,
+      };
+      if (senhaAtual != null && senhaAtual.isNotEmpty) {
+        body['senhaAtual'] = senhaAtual;
+      }
+      if (novaSenha != null && novaSenha.isNotEmpty) {
+        body['novaSenha'] = novaSenha;
+      }
+      final response = await http.put(
+        Uri.parse('$baseUrl/usuarios/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'message': data['error'] ?? 'Erro ao atualizar.'};
+      }
+    } catch (e) {
+      debugPrint('Erro ao atualizar usuário: $e');
+      return {'success': false, 'message': 'Erro de conexão.'};
+    }
+  }
+
+  // ==========================
   // FUNÇÕES DE CATEGORIAS
   // ==========================
   Future<List<dynamic>> listarCategorias(int usuarioId) async {

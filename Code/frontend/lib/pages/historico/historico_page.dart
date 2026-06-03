@@ -528,6 +528,13 @@ class _HistoricoPageState extends State<HistoricoPage> {
                   style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: _primary),
+              title: const Text('Configurações',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/configuracoes'),
+            ),
             const Spacer(),
             const Divider(),
             ListTile(

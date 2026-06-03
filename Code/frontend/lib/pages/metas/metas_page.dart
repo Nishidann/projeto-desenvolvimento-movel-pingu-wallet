@@ -410,6 +410,13 @@ class _MetasPageState extends State<MetasPage> {
               selectedTileColor: _primary.withOpacity(0.08),
               onTap: () => Navigator.pop(context),
             ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: _primary),
+              title: const Text('Configurações',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/configuracoes'),
+            ),
             const Spacer(),
             const Divider(),
             ListTile(
