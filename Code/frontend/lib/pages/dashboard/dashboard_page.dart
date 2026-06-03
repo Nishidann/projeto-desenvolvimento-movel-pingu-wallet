@@ -531,6 +531,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: AppColors.primary),
+              title: const Text('Configurações',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/configuracoes'),
+            ),
             const Spacer(),
             const Divider(),
             ListTile(
