@@ -267,6 +267,184 @@ class _MetasPageState extends State<MetasPage> {
   }
 
   // =========================================================================
+  // DIÁLOGO: DEPOSITAR VALOR NA META
+  // =========================================================================
+  void _mostrarDialogDeposito(Map<String, dynamic> meta) {
+    final valorController = TextEditingController();
+    final alvo = double.tryParse(meta['alvo'].toString()) ?? 1.0;
+    final atual = double.tryParse(meta['atual'].toString()) ?? 0.0;
+    final restante = alvo - atual;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: _surface,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cabeçalho
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.add_circle_outline,
+                        color: Color(0xFF10B981), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Depositar',
+                            style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: _primary)),
+                        Text(
+                          meta['titulo'] ?? 'Objetivo',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Info de progresso atual
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Acumulado',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey)),
+                        Text(
+                          NumberFormat.currency(
+                                  locale: 'pt_BR', symbol: 'R\$')
+                              .format(atual),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: _primary,
+                              fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('Falta',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey)),
+                        Text(
+                          NumberFormat.currency(
+                                  locale: 'pt_BR', symbol: 'R\$')
+                              .format(restante < 0 ? 0 : restante),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: _accent,
+                              fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Campo de valor
+              TextField(
+                controller: valorController,
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Valor a depositar (R\$)',
+                  prefixIcon: const Icon(Icons.attach_money,
+                      color: Color(0xFF10B981)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF10B981), width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Botões
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancelar',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: () async {
+                        final valor =
+                            double.tryParse(valorController.text.replaceAll(',', '.'));
+                        if (valor == null || valor <= 0) return;
+                        Navigator.pop(context);
+                        await _apiService.depositarNaMeta(
+                            meta['id'], valor);
+                        _carregarDadosReal();
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Depositar',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =========================================================================
   // DIÁLOGO: CONFIRMAÇÃO DE EXCLUSÃO DE META
   // =========================================================================
   void _confirmarDeletarMeta(int id, String titulo) {
@@ -508,7 +686,7 @@ class _MetasPageState extends State<MetasPage> {
                                             color: _primary)),
                                   ],
                                 ),
-                                // Container de ações integradas (Porcentagem + Lápis + Lixeira)
+                                // Container de ações integradas (Porcentagem + Depósito + Lápis + Lixeira)
                                 Row(
                                   children: [
                                     Text(
@@ -517,7 +695,16 @@ class _MetasPageState extends State<MetasPage> {
                                             fontWeight: FontWeight.w900,
                                             color: _accent,
                                             fontSize: 14)),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 2),
+                                    IconButton(
+                                      icon: const Icon(
+                                          Icons.add_circle_outline,
+                                          color: Color(0xFF10B981),
+                                          size: 20),
+                                      tooltip: 'Depositar',
+                                      onPressed: () =>
+                                          _mostrarDialogDeposito(m),
+                                    ),
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined,
                                           color: Colors.blue, size: 18),

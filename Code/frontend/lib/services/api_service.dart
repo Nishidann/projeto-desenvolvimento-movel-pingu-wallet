@@ -397,4 +397,18 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> depositarNaMeta(int id, double valor) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/metas/$id/depositar'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'valor': valor}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao depositar na meta: $e');
+      return false;
+    }
+  }
 }
