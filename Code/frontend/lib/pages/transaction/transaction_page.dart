@@ -41,14 +41,12 @@ class _TransactionPageState extends State<TransactionPage> {
   final ApiService _apiService = ApiService();
 
   static const Map<String, IconData> _iconMap = {
-    // Alimentação
     'restaurant': Icons.restaurant,
     'fastfood': Icons.fastfood,
     'local_cafe': Icons.local_cafe,
     'local_bar': Icons.local_bar,
     'bakery_dining': Icons.bakery_dining,
     'set_meal': Icons.set_meal,
-    // Transporte
     'directions_car': Icons.directions_car,
     'directions_bus': Icons.directions_bus,
     'directions_bike': Icons.directions_bike,
@@ -57,37 +55,31 @@ class _TransactionPageState extends State<TransactionPage> {
     'flight': Icons.flight,
     'local_gas_station': Icons.local_gas_station,
     'local_parking': Icons.local_parking,
-    // Casa
     'home': Icons.home,
     'home_repair_service': Icons.home_repair_service,
     'water_drop': Icons.water_drop,
     'wifi': Icons.wifi,
     'electrical_services': Icons.electrical_services,
-    // Saúde
     'favorite': Icons.favorite,
     'local_hospital': Icons.local_hospital,
     'local_pharmacy': Icons.local_pharmacy,
     'fitness_center': Icons.fitness_center,
     'self_improvement': Icons.self_improvement,
     'spa': Icons.spa,
-    // Educação
     'school': Icons.school,
     'book': Icons.book,
     'science': Icons.science,
     'laptop': Icons.laptop,
     'computer': Icons.computer,
-    // Entretenimento
     'sports_esports': Icons.sports_esports,
     'movie': Icons.movie,
     'music_note': Icons.music_note,
     'theater_comedy': Icons.theater_comedy,
     'palette': Icons.palette,
     'camera_alt': Icons.camera_alt,
-    // Compras
     'shopping_cart': Icons.shopping_cart,
     'checkroom': Icons.checkroom,
     'storefront': Icons.storefront,
-    // Finanças
     'attach_money': Icons.attach_money,
     'savings': Icons.savings,
     'account_balance': Icons.account_balance,
@@ -95,23 +87,19 @@ class _TransactionPageState extends State<TransactionPage> {
     'payments': Icons.payments,
     'trending_up': Icons.trending_up,
     'percent': Icons.percent,
-    // Trabalho & Renda
     'work': Icons.work,
     'business_center': Icons.business_center,
     'card_giftcard': Icons.card_giftcard,
-    // Esportes & Lazer
     'sports_soccer': Icons.sports_soccer,
     'sports_basketball': Icons.sports_basketball,
     'sports_tennis': Icons.sports_tennis,
     'directions_run': Icons.directions_run,
     'beach_access': Icons.beach_access,
     'hiking': Icons.hiking,
-    // Tecnologia
     'smartphone': Icons.smartphone,
     'headphones': Icons.headphones,
     'gamepad': Icons.gamepad,
     'subscriptions': Icons.subscriptions,
-    // Outros
     'pets': Icons.pets,
     'celebration': Icons.celebration,
     'volunteer_activism': Icons.volunteer_activism,
@@ -170,7 +158,7 @@ class _TransactionPageState extends State<TransactionPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Transação salva com sucesso! 🧊'),
+            content: Text('Transação salva com sucesso! 🐧'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -208,35 +196,7 @@ class _TransactionPageState extends State<TransactionPage> {
         child: SafeArea(
           child: Stack(
             children: [
-              // Botão minimalista de voltar
-              Positioned(
-                top: 16,
-                left: 16,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.textLight,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.secondary.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 16,
-                      color: AppColors.secondary,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Conteúdo Central Minimalista
+              // 1º Conteúdo Central Minimalista (Fica no Fundo)
               Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
@@ -248,11 +208,10 @@ class _TransactionPageState extends State<TransactionPage> {
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(32),
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          width: 1.5),
+                          color: Colors.white.withOpacity(0.4), width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.secondary.withValues(alpha: 0.06),
+                          color: AppColors.secondary.withOpacity(0.06),
                           blurRadius: 32,
                           offset: const Offset(0, 12),
                         ),
@@ -261,17 +220,16 @@ class _TransactionPageState extends State<TransactionPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Ícone do topo
+                        // Ícone do topo (AQUI ENTROU O PINGUIM)
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.12),
+                            color: AppColors.accent.withOpacity(0.12),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
-                            Icons.account_balance_wallet,
-                            size: 38,
-                            color: AppColors.accent,
+                          child: const Text(
+                            '🐧',
+                            style: TextStyle(fontSize: 38),
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -362,16 +320,41 @@ class _TransactionPageState extends State<TransactionPage> {
                                         ),
                                       ),
                                       SizedBox(width: 8),
-                                      Icon(
-                                        Icons.ac_unit,
-                                        size: 16,
-                                        color: AppColors.textLight,
-                                      ),
+                                      Text('🐧',
+                                          style: TextStyle(fontSize: 18)),
                                     ],
                                   ),
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2º Botão minimalista de voltar (Fica no Topo e Clicável)
+              Positioned(
+                top: 16,
+                left: 16,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.textLight,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.secondary.withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 16,
+                      color: AppColors.secondary,
                     ),
                   ),
                 ),
@@ -392,7 +375,7 @@ class _TransactionPageState extends State<TransactionPage> {
           width: isSelected ? 2 : 1.2,
         ),
         backgroundColor:
-            isSelected ? corAtiva.withValues(alpha: 0.08) : Colors.transparent,
+            isSelected ? corAtiva.withOpacity(0.08) : Colors.transparent,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
@@ -416,13 +399,14 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Widget _dropdownCategoria() {
-    final corAtiva = _tipo == 'despesa' ? Colors.red.shade400 : AppColors.success;
+    final corAtiva =
+        _tipo == 'despesa' ? Colors.red.shade400 : AppColors.success;
 
     if (_isLoadingCategorias) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.6),
+          color: Colors.white.withOpacity(0.6),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade200, width: 1),
         ),
@@ -431,10 +415,12 @@ class _TransactionPageState extends State<TransactionPage> {
             const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.secondary),
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: AppColors.secondary),
             ),
             const SizedBox(width: 12),
-            Text('Carregando categorias...', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+            Text('Carregando categorias...',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
           ],
         ),
       );
@@ -447,13 +433,14 @@ class _TransactionPageState extends State<TransactionPage> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.6),
+          color: Colors.white.withOpacity(0.6),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.orange.shade200, width: 1),
         ),
         child: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, size: 20, color: Colors.orange.shade400),
+            Icon(Icons.warning_amber_rounded,
+                size: 20, color: Colors.orange.shade400),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -469,7 +456,7 @@ class _TransactionPageState extends State<TransactionPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
+        color: Colors.white.withOpacity(0.6),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200, width: 1),
       ),
@@ -540,7 +527,7 @@ class _TransactionPageState extends State<TransactionPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.6),
+          color: Colors.white.withOpacity(0.6),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade200, width: 1),
         ),
@@ -583,7 +570,7 @@ class _TransactionPageState extends State<TransactionPage> {
             fontWeight: FontWeight.w500),
         prefixIcon: Icon(icon, size: 20, color: AppColors.secondary),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.6),
+        fillColor: Colors.white.withOpacity(0.6),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         border: OutlineInputBorder(

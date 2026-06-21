@@ -137,7 +137,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       return;
     }
     if (novaSenha.length < 6) {
-      _mostrarSnackbar('A nova senha deve ter pelo menos 6 caracteres.', isErro: true);
+      _mostrarSnackbar('A nova senha deve ter pelo menos 6 caracteres.',
+          isErro: true);
       return;
     }
     if (novaSenha != confirmar) {
@@ -170,7 +171,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       _confirmarSenhaController.clear();
       _mostrarSnackbar('Senha alterada com sucesso!');
     } else {
-      _mostrarSnackbar(resultado['message'] ?? 'Erro ao alterar senha.', isErro: true);
+      _mostrarSnackbar(resultado['message'] ?? 'Erro ao alterar senha.',
+          isErro: true);
     }
   }
 
@@ -207,7 +209,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               const SizedBox(height: 16),
               const Text('Sair da Conta',
                   style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w800, color: _primary)),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: _primary)),
               const SizedBox(height: 8),
               Text('Tem certeza que deseja sair?',
                   textAlign: TextAlign.center,
@@ -281,9 +285,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           const SizedBox(width: 10),
           Text(titulo,
               style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: _primary)),
+                  fontSize: 16, fontWeight: FontWeight.w800, color: _primary)),
         ],
       ),
     );
@@ -349,63 +351,84 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(color: _primary),
+              decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
               currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: _primary, size: 36),
+                child: Text('🐧', style: TextStyle(fontSize: 32)),
               ),
               accountName: Text(_nomeUsuario),
               accountEmail: Text(_emailUsuario),
             ),
             ListTile(
-              leading: const Icon(Icons.dashboard, color: _primary),
+              leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
               title: const Text('Dashboard',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/home',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () => Navigator.pushReplacementNamed(context, '/home'),
             ),
             ListTile(
-              leading: const Icon(Icons.bar_chart, color: _primary),
+              leading: const Icon(Icons.bar_chart, color: Color(0xFF1E3A8A)),
               title: const Text('Relatório Mensal',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/relatorio',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/relatorio'),
             ),
             ListTile(
-              leading: const Icon(Icons.history, color: _primary),
+              leading: const Icon(Icons.history, color: Color(0xFF1E3A8A)),
               title: const Text('Histórico',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/historico',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/historico'),
             ),
             ListTile(
-              leading: const Icon(Icons.category, color: _primary),
+              leading: const Icon(Icons.category, color: Color(0xFF1E3A8A)),
               title: const Text('Categorias',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/categorias',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/categorias'),
             ),
             ListTile(
-              leading: const Icon(Icons.ads_click, color: _primary),
+              leading: const Icon(Icons.ads_click, color: Color(0xFF1E3A8A)),
               title: const Text('Metas e Objetivos',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/metas',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
+
+            const Spacer(), // 👇 ESSA É A MÁGICA QUE EMPURRA AS CONFIGURAÇÕES PARA BAIXO
+            const Divider(),
+
             ListTile(
-              leading: const Icon(Icons.settings, color: _primary),
+              leading: const Icon(Icons.settings, color: Color(0xFF1E3A8A)),
               title: const Text('Configurações',
                   style: TextStyle(fontWeight: FontWeight.bold)),
-              selected: true,
-              selectedTileColor: _primary.withOpacity(0.08),
-              onTap: () => Navigator.pop(context),
+              selected:
+                  ModalRoute.of(context)?.settings.name == '/configuracoes',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/configuracoes'),
             ),
-            const Spacer(),
-            const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text('Sair da Conta',
                   style: TextStyle(
                       color: Colors.redAccent, fontWeight: FontWeight.bold)),
-              onTap: _logout,
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/login', (route) => false);
+                }
+              },
             ),
             const SizedBox(height: 20),
           ],
@@ -478,15 +501,15 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                         children: [
                           TextField(
                             controller: _nomeController,
-                            decoration:
-                                _inputDecoration('Nome completo', Icons.person_outline),
+                            decoration: _inputDecoration(
+                                'Nome completo', Icons.person_outline),
                             textCapitalization: TextCapitalization.words,
                           ),
                           const SizedBox(height: 14),
                           TextField(
                             controller: _emailController,
-                            decoration:
-                                _inputDecoration('E-mail', Icons.email_outlined),
+                            decoration: _inputDecoration(
+                                'E-mail', Icons.email_outlined),
                             keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 14),
@@ -523,8 +546,9 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                       child: CircularProgressIndicator(
                                           strokeWidth: 2, color: Colors.white))
                                   : const Icon(Icons.save_outlined),
-                              label: Text(
-                                  _salvandoPerfil ? 'Salvando...' : 'Salvar Perfil'),
+                              label: Text(_salvandoPerfil
+                                  ? 'Salvando...'
+                                  : 'Salvar Perfil'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _primary,
                                 foregroundColor: Colors.white,
@@ -562,8 +586,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                       : Icons.visibility_outlined,
                                   color: Colors.grey,
                                 ),
-                                onPressed: () => setState(
-                                    () => _senhaAtualVisivel = !_senhaAtualVisivel),
+                                onPressed: () => setState(() =>
+                                    _senhaAtualVisivel = !_senhaAtualVisivel),
                               ),
                             ),
                           ),
@@ -581,8 +605,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                                       : Icons.visibility_outlined,
                                   color: Colors.grey,
                                 ),
-                                onPressed: () => setState(
-                                    () => _novaSenhaVisivel = !_novaSenhaVisivel),
+                                onPressed: () => setState(() =>
+                                    _novaSenhaVisivel = !_novaSenhaVisivel),
                               ),
                             ),
                           ),
@@ -590,8 +614,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                           TextField(
                             controller: _confirmarSenhaController,
                             obscureText: !_confirmarSenhaVisivel,
-                            decoration: _inputDecoration(
-                                    'Confirmar nova senha', Icons.check_circle_outline)
+                            decoration: _inputDecoration('Confirmar nova senha',
+                                    Icons.check_circle_outline)
                                 .copyWith(
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -708,8 +732,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                       color: Color(0xFF0F172A))),
               const SizedBox(height: 2),
               Text(subtitulo,
-                  style:
-                      TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
             ],
           ),
         ),
