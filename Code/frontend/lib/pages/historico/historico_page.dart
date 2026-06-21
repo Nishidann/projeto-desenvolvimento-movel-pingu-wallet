@@ -257,6 +257,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: tipoSelecionado,
                           decoration: InputDecoration(
                               labelText: 'Tipo',
@@ -286,6 +287,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           value: categoriaSelecionada,
                           decoration: InputDecoration(
                               labelText: 'Categoria',
@@ -486,57 +488,71 @@ class _HistoricoPageState extends State<HistoricoPage> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(color: _primary),
+              decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
               currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: _primary, size: 36),
+                child: Text('🐧', style: TextStyle(fontSize: 32)),
               ),
               accountName: Text(_nomeUsuario),
               accountEmail: Text(_emailUsuario),
             ),
             ListTile(
-              leading: const Icon(Icons.dashboard, color: _primary),
+              leading: const Icon(Icons.dashboard, color: Color(0xFF1E3A8A)),
               title: const Text('Dashboard',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/home',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () => Navigator.pushReplacementNamed(context, '/home'),
             ),
             ListTile(
-              leading: const Icon(Icons.bar_chart, color: _primary),
+              leading: const Icon(Icons.bar_chart, color: Color(0xFF1E3A8A)),
               title: const Text('Relatório Mensal',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/relatorio',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/relatorio'),
             ),
             ListTile(
-              leading: const Icon(Icons.history, color: _primary),
+              leading: const Icon(Icons.history, color: Color(0xFF1E3A8A)),
               title: const Text('Histórico',
                   style: TextStyle(fontWeight: FontWeight.bold)),
-              selected: true,
-              selectedTileColor: _primary.withOpacity(0.08),
-              onTap: () => Navigator.pop(context),
+              selected: ModalRoute.of(context)?.settings.name == '/historico',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
+              onTap: () =>
+                  Navigator.pushReplacementNamed(context, '/historico'),
             ),
             ListTile(
-              leading: const Icon(Icons.category, color: _primary),
+              leading: const Icon(Icons.category, color: Color(0xFF1E3A8A)),
               title: const Text('Categorias',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/categorias',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/categorias'),
             ),
             ListTile(
-              leading: const Icon(Icons.ads_click, color: _primary),
+              leading: const Icon(Icons.ads_click, color: Color(0xFF1E3A8A)),
               title: const Text('Metas e Objetivos',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected: ModalRoute.of(context)?.settings.name == '/metas',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () => Navigator.pushReplacementNamed(context, '/metas'),
             ),
+
+            const Spacer(), // 👇 ESSA É A MÁGICA QUE EMPURRA AS CONFIGURAÇÕES PARA BAIXO
+            const Divider(),
+
             ListTile(
-              leading: const Icon(Icons.settings, color: _primary),
+              leading: const Icon(Icons.settings, color: Color(0xFF1E3A8A)),
               title: const Text('Configurações',
                   style: TextStyle(fontWeight: FontWeight.bold)),
+              selected:
+                  ModalRoute.of(context)?.settings.name == '/configuracoes',
+              selectedTileColor: const Color(0xFF1E3A8A).withOpacity(0.08),
               onTap: () =>
                   Navigator.pushReplacementNamed(context, '/configuracoes'),
             ),
-            const Spacer(),
-            const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text('Sair da Conta',

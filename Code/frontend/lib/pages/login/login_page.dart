@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// Lembre-se de importar o arquivo correto do serviço que criamos
-import '../../services/api_service.dart'; 
+import '../../services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,14 +9,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controladores para capturar o que o usuário digita
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
-  // Variável para controlar o estado do botão (girando ou não)
   bool _isLoading = false;
 
-  // Função que conversa com o Node.js
   void _fazerLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -26,140 +21,103 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true; // Inicia a animação de carregamento
-    });
-
+    setState(() => _isLoading = true);
     final apiService = ApiService();
     bool sucesso = await apiService.login(
-      _emailController.text.trim(), 
-      _passwordController.text,
-    );
+        _emailController.text.trim(), _passwordController.text);
+    setState(() => _isLoading = false);
 
-    setState(() {
-      _isLoading = false; // Para a animação
-    });
-
-    if (sucesso) {
-      // Se a API retornar o Token, vamos para a tela principal!
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home'); 
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+    if (sucesso && mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
             content: Text('E-mail ou senha inválidos.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+            backgroundColor: Colors.red),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // CORREÇÃO UX MOBILE: Usando Column vertical para caber perfeitamente em telas móveis sem espremer
     return Scaffold(
-      body: Row(
-        children: [
-          // Lado Esquerdo: Branding (Mantido intacto!)
-          Expanded(
-            flex: 1,
-            child: Container(
-              color: Colors.blueAccent,
-              child: const Column(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '🐧',
-                    style: TextStyle(fontSize: 90),
+                  // Branding centralizado no topo (Padrão Mobile Premium)
+                  const Column(
+                    children: [
+                      Text('🐧', style: TextStyle(fontSize: 70)),
+                      SizedBox(height: 10),
+                      Text("PINGU WALLET",
+                          style: TextStyle(
+                              color: Color(0xFF1E3A8A),
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900)),
+                      SizedBox(height: 6),
+                      Text("Seu ecossistema financeiro ártico",
+                          style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    ],
                   ),
-                  SizedBox(height: 20),
-                  Text("PINGU WALLET",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 35),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                        labelText: 'E-mail',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12)))),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: Icon(Icons.lock),
+                        border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12)))),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _fazerLogin,
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12))),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Entrar",
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/registro'),
+                    child: const Text("Ainda não tem conta? Cadastre-se aqui.",
+                        style: TextStyle(color: Color(0xFF3B82F6))),
+                  )
                 ],
               ),
             ),
           ),
-          
-          // Lado Direito: Formulário de Login da API
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: ConstrainedBox(
-                // Limita a largura do formulário para não ficar gigante na tela do Firefox
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        "Bem-vindo!",
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 40),
-                      
-                      // Campo de E-mail
-                      TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'E-mail',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      // Campo de Senha
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true, // Esconde a senha
-                        decoration: const InputDecoration(
-                          labelText: 'Senha',
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      
-                      // Botão de Login
-                      SizedBox(
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _fazerLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text("Entrar", style: TextStyle(fontSize: 18)),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      // Link para cadastro (Para a próxima etapa do projeto)
-                      TextButton(
-                        onPressed: () {
-                          // Navega para a tela de registro
-                          Navigator.pushNamed(context, '/registro');
-                        },
-                        child: const Text("Ainda não tem conta? Cadastre-se aqui."),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
