@@ -1,81 +1,25 @@
-## PINGU WALLET
+# PINGU WALLET - MOBILE
 
-Este é um sistema de gestão financeira pessoal desenvolvido para oferecer controle total sobre receitas e despesas, permitindo uma visão clara da saúde financeira através de dashboards intuitivos e previsões inteligentes.
+Aplicação de gestão financeira pessoal desenvolvida em **Flutter**, focada em oferecer uma interface fluida para controle de receitas, despesas e metas financeiras.
 
-## 📝 Descrição
+## 📝 Sobre o Projeto
+O Pingu Wallet ajuda estudantes e usuários a manterem o controle total sobre suas finanças. O front-end utiliza o **Material 3** para garantir uma interface moderna, responsiva e alinhada com a identidade visual **Azul Ártico (#1E3A8A)**.
 
-O projeto consiste em um ecossistema completo composto por um aplicativo móvel desenvolvido em Flutter, uma API robusta em Node.js e um banco de dados relacional PostgreSQL. A arquitetura foi pensada para ser escalável, utilizando Docker para infraestrutura e Firebase Auth para garantir a segurança dos dados dos usuários.
-
-## 🚀 Funcionalidades 
-Atualmente, o projeto encontra-se em sua fase inicial (MVP), com as seguintes funcionalidades core implementadas:
-
-* Gestão de Transações: Cadastro de receitas e despesas com descrição e valores.
-
-* Dashboard Resumo: Visualização em tempo real do Saldo Atual, Total de Entradas e Total de Saídas.
-
-* Histórico de Lançamentos: Listagem cronológica de todas as movimentações financeiras.
-
-* Infraestrutura Automatizada: Banco de dados conteinerizado pronto para uso.
+## 🚀 Funcionalidades
+* **Dashboard Ártico**: Visualização de saldo total e gráfico de evolução patrimonial dinâmico (via `fl_chart`).
+* **Relatórios Inteligentes**: Análise de gastos e receitas por categoria com detalhamento interativo.
+* **Metas e Objetivos**: Gestão de economias com histórico de aportes detalhado.
+* **Autenticação**: Fluxo seguro via JWT, armazenado localmente com `SharedPreferences`.
 
 ## 🛠️ Tecnologias
-### Mobile (Front-end)
-
-* Flutter - Framework UI.
-
-* Http - Consumo de API.
-
-* Firebase Auth - Autenticação segura.
-
-### Server (Back-end)
-
-* Node.js - Ambiente de execução.
-
-* Express - Framework web para a API.
-
-* node-postgres (pg) - Driver de conexão com o banco.
-
-### Infraestrutura & Banco
-
-* PostgreSQL - Banco de dados relacional.
-
-* Docker - Orquestração de containers.
+* **Framework**: Flutter (Dart)
+* **Design**: Material 3
+* **Conectividade**: `http` (Consumo de API RESTful)
 
 ## ⚙️ Como Executar
-
-### 1. Preparar o Banco de Dados
-
-Navegue até a pasta backend e suba o container do banco:
-
-``` bash
-cd backend
-docker-compose up -d
-```
-
-### 2. Iniciar o Back-end
-
-Ainda na pasta backend, instale as dependências e rode o servidor em modo de desenvolvimento:
-
-``` bash
-npm install
-npm run dev
-```
-
-### 3. Iniciar o Front-end
-
-Navegue até a pasta frontend, instale as dependências e execute o app:
-
-``` bash
-cd ../frontend
-flutter pub get
-flutter run
-```
-
-## 📄 Licença
-
-Este projeto está sob a licença **Apache 2.0**. Veja o arquivo LICENSE para mais detalhes.
-
-## Desenvolvido por:
- João Pedro Araújo.  
- Daniel Suzuki Naves.  
- Luís Fernando Moreira Beani.  
- Guilherme Teruichi Nishida.  
+1. Certifique-se de ter o Flutter SDK instalado.
+2. Clone este repositório.
+3. No terminal, na raiz do projeto:
+   ```bash
+   flutter pub get
+   flutter run
