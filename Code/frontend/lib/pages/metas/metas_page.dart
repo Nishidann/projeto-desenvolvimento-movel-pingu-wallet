@@ -218,7 +218,7 @@ class _MetasPageState extends State<MetasPage> {
     );
   }
 
-  void _mostrarDialogMeta({Map<String, dynamic>? meta}) {
+  void _mostrarDialogMeta({Map<String, dynamic>? meta}) async {
     final isEdicao = meta != null;
     final tituloController =
         TextEditingController(text: isEdicao ? meta['titulo'] : '');
@@ -226,6 +226,20 @@ class _MetasPageState extends State<MetasPage> {
         TextEditingController(text: isEdicao ? meta['alvo'].toString() : '');
     final atualController =
         TextEditingController(text: isEdicao ? meta['atual'].toString() : '');
+
+    double depositoInicial = 0.0;
+
+    // Se for edição, busca o histórico para pegar o valor do primeiro depósito
+    if (isEdicao) {
+      final metaId = int.parse(meta['id'].toString());
+      final depositos = await _apiService.obterDepositosMeta(metaId);
+      if (depositos.isNotEmpty) {
+        // Ajuste aqui conforme a ordem que sua API retorna (se o primeiro é o inicial)
+        depositoInicial =
+            double.tryParse(depositos.last['valor'].toString()) ?? 0.0;
+      }
+    }
+
     String iconeSelecionado =
         isEdicao ? (meta['icone'] ?? 'savings') : 'savings';
 
@@ -293,19 +307,37 @@ class _MetasPageState extends State<MetasPage> {
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)))),
                 const SizedBox(height: 14),
-                TextField(
-                    controller: atualController,
-                    enabled: !isEdicao,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                        labelText: 'Valor Inicial Guardado (R\$)',
-                        prefixIcon:
-                            const Icon(Icons.ads_click, color: _primary),
-                        helperText:
-                            'O valor inicial é fixo após a criação. Use os aportes para atualizar.',
-                        helperStyle: const TextStyle(color: Colors.orange),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)))),
+                if (isEdicao) ...[
+                  // MODO EDIÇÃO: Apenas leitura (Container com texto)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: _primary, size: 20),
+                        const SizedBox(width: 10),
+                        Text(
+                            'Valor Inicial: R\$ ${depositoInicial.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, color: _primary)),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // MODO CRIAÇÃO: O campo editável que você precisa
+                  TextField(
+                      controller: atualController, // Aqui ele aparece!
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                          labelText: 'Valor Inicial Guardado (R\$)',
+                          prefixIcon:
+                              const Icon(Icons.ads_click, color: _primary),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)))),
+                ],
                 const SizedBox(height: 20),
                 const Text('Escolha um ícone temático',
                     style: TextStyle(
