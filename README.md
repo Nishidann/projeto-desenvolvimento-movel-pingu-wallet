@@ -6,10 +6,10 @@ Aplicativo de gestão financeira pessoal desenvolvido em **Flutter**, focado em 
 O Pingu Wallet é a solução ideal para gerenciar sua saúde financeira. Com ele, você pode monitorar seu saldo, categorizar transações e acompanhar o progresso de suas metas financeiras em tempo real.
 
 ## 🚀 Funcionalidades
-* **Dashboard Ártico**: Visualização de saldo total e gráfico de evolução patrimonial dinâmico (utilizando `fl_chart`)[cite: 1].
+* **Dashboard Ártico**: Visualização de saldo total e gráfico de evolução patrimonial dinâmico (utilizando `fl_chart`).
 * **Gestão de Metas**: Criação e acompanhamento de objetivos financeiros com histórico detalhado de aportes.
-* **Autenticação**: Sistema seguro de login/registro via JWT com persistência de sessão (SharedPreferences)[cite: 1].
-* **Design**: Identidade visual baseada no "Azul Ártico Profundo" (#1E3A8A)[cite: 1].
+* **Autenticação**: Sistema seguro de login/registro via JWT com persistência de sessão (SharedPreferences).
+* **Design**: Identidade visual baseada no "Azul Ártico Profundo" (#1E3A8A).
 
 ## 🛠️ Tecnologias
 * **Linguagem**: Dart
@@ -25,13 +25,10 @@ O Pingu Wallet é a solução ideal para gerenciar sua saúde financeira. Com el
    flutter run
    
 ## 👥 Equipe
-João Pedro Araújo
-
-Daniel Suzuki Naves
-
-Luís Fernando Moreira Beani
-
-Guilherme Teruichi Nishida
+* João Pedro Araújo
+* Daniel Suzuki Naves
+* Luís Fernando Moreira Beani
+* Guilherme Teruichi Nishida
 
 ## 📄 Licença
-Este projeto está sob a licença Apache 2.0
+Este projeto está sob a licença **Apache 2.0.**
