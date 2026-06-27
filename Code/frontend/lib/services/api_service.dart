@@ -248,7 +248,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return {'success': true, 'message': data['message']};
       } else {
-        return {'success': false, 'message': data['error'] ?? 'Erro ao atualizar.'};
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Erro ao atualizar.'
+        };
       }
     } catch (e) {
       debugPrint('Erro ao atualizar usuário: $e');
@@ -370,13 +373,12 @@ class ApiService {
   }
 
   Future<bool> editarMeta(
-      int id, String titulo, double alvo, double atual, String icone) async {
+      int id, String titulo, double alvo, String icone) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/metas/$id'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(
-            {'titulo': titulo, 'alvo': alvo, 'atual': atual, 'icone': icone}),
+        body: jsonEncode({'titulo': titulo, 'alvo': alvo, 'icone': icone}),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -409,6 +411,21 @@ class ApiService {
     } catch (e) {
       debugPrint('Erro ao depositar na meta: $e');
       return false;
+    }
+  }
+
+  // Busca o histórico de depósitos de uma meta específica
+  Future<List<dynamic>> obterDepositosMeta(int metaId) async {
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/metas/$metaId/depositos'));
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Erro ao buscar depositos da meta: $e');
+      return [];
     }
   }
 }

@@ -12,12 +12,12 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true; // ESTADO DO OLHINHO AQUI
 
   void _fazerLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, preencha todos os campos.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Por favor, preencha todos os campos.')));
       return;
     }
 
@@ -30,17 +30,14 @@ class _LoginPageState extends State<LoginPage> {
     if (sucesso && mounted) {
       Navigator.pushReplacementNamed(context, '/home');
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('E-mail ou senha inválidos.'),
-            backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('E-mail ou senha inválidos.'),
+          backgroundColor: Colors.red));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // CORREÇÃO UX MOBILE: Usando Column vertical para caber perfeitamente em telas móveis sem espremer
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -53,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Branding centralizado no topo (Padrão Mobile Premium)
                   const Column(
                     children: [
                       Text('🐧', style: TextStyle(fontSize: 70)),
@@ -80,15 +76,27 @@ class _LoginPageState extends State<LoginPage> {
                                 BorderRadius.all(Radius.circular(12)))),
                   ),
                   const SizedBox(height: 16),
+
+                  // SENHA COM O OLHINHO
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Senha',
-                        prefixIcon: Icon(Icons.lock),
-                        border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(12)))),
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: 'Senha',
+                      prefixIcon: const Icon(Icons.lock),
+                      border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12))),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(

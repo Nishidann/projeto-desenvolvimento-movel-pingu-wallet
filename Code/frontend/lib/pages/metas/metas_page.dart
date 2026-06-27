@@ -179,18 +179,15 @@ class _MetasPageState extends State<MetasPage> {
                       }
 
                       if ((atual + valor) > alvo) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'Valor excede o alvo! Faltam apenas R\$ ${restante.toStringAsFixed(2)}.'),
-                              backgroundColor: Colors.redAccent),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Valor excede o alvo! Faltam apenas R\$ ${restante.toStringAsFixed(2)}.'),
+                            backgroundColor: Colors.redAccent));
                         return;
                       }
 
-                      Navigator.pop(context); // Fecha o modal primeiro
+                      Navigator.pop(context);
 
-                      // Forçando o tipo antes de enviar para a API (Tratamento)
                       bool sucesso =
                           await _apiService.depositarNaMeta(metaId, valor);
 
@@ -221,7 +218,6 @@ class _MetasPageState extends State<MetasPage> {
     );
   }
 
-  // DIÁLOGO PREMIUM RESTAURADO
   void _mostrarDialogMeta({Map<String, dynamic>? meta}) {
     final isEdicao = meta != null;
     final tituloController =
@@ -246,7 +242,6 @@ class _MetasPageState extends State<MetasPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // CABEÇALHO PREMIUM
                 Row(
                   children: [
                     Container(
@@ -279,7 +274,6 @@ class _MetasPageState extends State<MetasPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-
                 TextField(
                     controller: tituloController,
                     decoration: InputDecoration(
@@ -301,15 +295,18 @@ class _MetasPageState extends State<MetasPage> {
                 const SizedBox(height: 14),
                 TextField(
                     controller: atualController,
+                    enabled: !isEdicao,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                         labelText: 'Valor Inicial Guardado (R\$)',
                         prefixIcon:
                             const Icon(Icons.ads_click, color: _primary),
+                        helperText:
+                            'O valor inicial é fixo após a criação. Use os aportes para atualizar.',
+                        helperStyle: const TextStyle(color: Colors.orange),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)))),
                 const SizedBox(height: 20),
-
                 const Text('Escolha um ícone temático',
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
@@ -346,7 +343,6 @@ class _MetasPageState extends State<MetasPage> {
                   }).toList(),
                 ),
                 const SizedBox(height: 24),
-
                 Row(
                   children: [
                     Expanded(
@@ -389,7 +385,6 @@ class _MetasPageState extends State<MetasPage> {
                                 meta['id'],
                                 tituloController.text.trim(),
                                 double.tryParse(alvoController.text) ?? 0.0,
-                                double.tryParse(atualController.text) ?? 0.0,
                                 iconeSelecionado);
                           }
                           _carregarDadosReal();
@@ -413,8 +408,8 @@ class _MetasPageState extends State<MetasPage> {
   Widget build(BuildContext context) {
     final currencyFormat =
         NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final dateFormat = DateFormat('dd/MM/yy HH:mm');
 
-    // Calcula total guardado entre todas as metas para exibir no Banner Principal
     double totalGuardadoGeral = 0.0;
     for (var m in _metas) {
       totalGuardadoGeral += (double.tryParse(m['atual'].toString()) ?? 0.0);
@@ -428,7 +423,6 @@ class _MetasPageState extends State<MetasPage> {
         backgroundColor: _primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // DRAWER PADRONIZADO IGUAL AO DASHBOARD
       drawer: Drawer(
         child: Column(
           children: [
@@ -506,7 +500,6 @@ class _MetasPageState extends State<MetasPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // BANNER PREMIUM: Visão Geral de Metas
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
@@ -543,13 +536,12 @@ class _MetasPageState extends State<MetasPage> {
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle),
-                            child: const Icon(Icons.savings_outlined,
-                                color: Colors.white, size: 32),
-                          )
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle),
+                              child: const Icon(Icons.savings_outlined,
+                                  color: Colors.white, size: 32))
                         ],
                       ),
                     ),
@@ -560,7 +552,6 @@ class _MetasPageState extends State<MetasPage> {
                             fontWeight: FontWeight.w900,
                             color: _primary)),
                     const SizedBox(height: 12),
-
                     if (_metas.isEmpty)
                       Center(
                         child: Padding(
@@ -581,6 +572,7 @@ class _MetasPageState extends State<MetasPage> {
                       )
                     else
                       ..._metas.map((m) {
+                        final metaId = int.parse(m['id'].toString());
                         final alvo =
                             double.tryParse(m['alvo'].toString()) ?? 1.0;
                         final atual =
@@ -591,7 +583,6 @@ class _MetasPageState extends State<MetasPage> {
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: _surface,
                             borderRadius: BorderRadius.circular(24),
@@ -603,10 +594,13 @@ class _MetasPageState extends State<MetasPage> {
                                   offset: const Offset(0, 4))
                             ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          child: Theme(
+                            data: Theme.of(context)
+                                .copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.only(
+                                  left: 20, right: 20, top: 12, bottom: 4),
+                              title: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
@@ -632,7 +626,7 @@ class _MetasPageState extends State<MetasPage> {
                                                   fontWeight: FontWeight.w900,
                                                   color: _primary)),
                                           Text(
-                                              'Meta: ${currencyFormat.format(alvo)}',
+                                              '${currencyFormat.format(atual)} de ${currencyFormat.format(alvo)}',
                                               style: const TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.grey,
@@ -648,50 +642,221 @@ class _MetasPageState extends State<MetasPage> {
                                           color: _accent)),
                                 ],
                               ),
-                              const SizedBox(height: 18),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: LinearProgressIndicator(
-                                    value: percent,
-                                    color: _primary,
-                                    backgroundColor: Colors.grey.shade100,
-                                    minHeight: 8),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Atual: ${currencyFormat.format(atual)}',
-                                      style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w800,
-                                          color: _primary)),
-                                  Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20.0),
+                                  child: Column(
                                     children: [
-                                      // BOTÕES DE AÇÃO RESTAURADOS!
-                                      IconButton(
-                                          icon: const Icon(Icons.add_circle,
-                                              color: Colors.green, size: 30),
-                                          onPressed: () =>
-                                              _mostrarDialogDeposito(m),
-                                          tooltip: 'Depositar'),
-                                      IconButton(
-                                          icon: const Icon(Icons.edit,
-                                              color: Colors.blue, size: 22),
-                                          onPressed: () =>
-                                              _mostrarDialogMeta(meta: m)),
-                                      IconButton(
-                                          icon: const Icon(Icons.delete,
-                                              color: Colors.red, size: 22),
-                                          onPressed: () =>
-                                              _confirmarDeletarMeta(
-                                                  m['id'], m['titulo'])),
+                                      const SizedBox(height: 18),
+                                      LayoutBuilder(
+                                          builder: (context, constraints) {
+                                        final double width =
+                                            constraints.maxWidth;
+                                        final double position = width * percent;
+
+                                        return Column(
+                                          children: [
+                                            Stack(
+                                              clipBehavior: Clip.none,
+                                              alignment: Alignment.centerLeft,
+                                              children: [
+                                                Container(
+                                                    height: 10,
+                                                    decoration: BoxDecoration(
+                                                        color: Colors
+                                                            .grey.shade200,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5))),
+                                                Container(
+                                                    width: position,
+                                                    height: 10,
+                                                    decoration: BoxDecoration(
+                                                        color: _primary,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5))),
+                                                Positioned(
+                                                  left: position > 20
+                                                      ? position - 20
+                                                      : 0,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(2),
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                            color: Colors.white,
+                                                            shape: BoxShape
+                                                                .circle),
+                                                    child: const Text('🐧',
+                                                        style: TextStyle(
+                                                            fontSize: 18)),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text('Início: R\$ 0,00',
+                                                    style: const TextStyle(
+                                                        fontSize: 10,
+                                                        color: Colors.grey,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                Text(
+                                                    'Final: ${currencyFormat.format(alvo)}',
+                                                    style: const TextStyle(
+                                                        fontSize: 10,
+                                                        color: Colors.grey,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                              ],
+                                            )
+                                          ],
+                                        );
+                                      }),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                              'Atual: ${currencyFormat.format(atual)}',
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: _primary)),
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                  icon: const Icon(
+                                                      Icons.add_circle,
+                                                      color: Colors.green,
+                                                      size: 30),
+                                                  onPressed: () =>
+                                                      _mostrarDialogDeposito(m),
+                                                  tooltip: 'Depositar'),
+                                              IconButton(
+                                                  icon: const Icon(Icons.edit,
+                                                      color: Colors.blue,
+                                                      size: 22),
+                                                  onPressed: () =>
+                                                      _mostrarDialogMeta(
+                                                          meta: m)),
+                                              IconButton(
+                                                  icon: const Icon(Icons.delete,
+                                                      color: Colors.red,
+                                                      size: 22),
+                                                  onPressed: () =>
+                                                      _confirmarDeletarMeta(
+                                                          m['id'],
+                                                          m['titulo'])),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                      const Divider(height: 30),
+                                      const Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text('Histórico de Aportes',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey)),
+                                      ),
+
+                                      // BUSCA O HISTÓRICO REAL DA NOVA TABELA NO BANCO
+                                      FutureBuilder<List<dynamic>>(
+                                        future: _apiService
+                                            .obterDepositosMeta(metaId),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const Padding(
+                                                padding: EdgeInsets.all(16),
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        strokeWidth: 2));
+                                          }
+                                          if (snapshot.hasError ||
+                                              !snapshot.hasData ||
+                                              snapshot.data!.isEmpty) {
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 10),
+                                              child: Text(
+                                                  'Nenhum aporte registrado.',
+                                                  style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: Colors
+                                                          .grey.shade500)),
+                                            );
+                                          }
+
+                                          final depositos = snapshot.data!;
+                                          return Column(
+                                            children: depositos.map((deposito) {
+                                              final valorDep = double.tryParse(
+                                                      deposito['valor']
+                                                          .toString()) ??
+                                                  0.0;
+                                              String dataStr =
+                                                  deposito['data_deposito']
+                                                      .toString();
+                                              DateTime dataUtc =
+                                                  DateTime.parse(dataStr);
+                                              DateTime dataAjustada =
+                                                  dataUtc.toLocal();
+                                              dataAjustada =
+                                                  dataAjustada.subtract(
+                                                      const Duration(hours: 3));
+
+                                              return ListTile(
+                                                contentPadding: EdgeInsets.zero,
+                                                leading: Icon(
+                                                    Icons
+                                                        .subdirectory_arrow_right,
+                                                    color: Colors.grey.shade400,
+                                                    size: 18),
+                                                title: Text(
+                                                    deposito['descricao'] ??
+                                                        'Aporte',
+                                                    style: TextStyle(
+                                                        fontSize: 13,
+                                                        color: Colors
+                                                            .grey.shade700,
+                                                        fontWeight:
+                                                            FontWeight.w600)),
+                                                subtitle: Text(
+                                                    dateFormat
+                                                        .format(dataAjustada),
+                                                    style: const TextStyle(
+                                                        fontSize: 10,
+                                                        color: Colors.grey)),
+                                                trailing: Text(
+                                                    '+ ${currencyFormat.format(valorDep)}',
+                                                    style: const TextStyle(
+                                                        color: Colors.green,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 13)),
+                                              );
+                                            }).toList(),
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(height: 10),
                                     ],
-                                  )
-                                ],
-                              )
-                            ],
+                                  ),
+                                )
+                              ],
+                            ),
                           ),
                         );
                       }),

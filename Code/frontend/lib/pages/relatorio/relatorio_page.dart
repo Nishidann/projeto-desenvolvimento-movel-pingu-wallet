@@ -120,7 +120,6 @@ class _RelatorioPageState extends State<RelatorioPage> {
         backgroundColor: const Color(0xFF1E3A8A),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // DRAWER PADRONIZADO IGUAL AO DO DASHBOARD
       drawer: Drawer(
         child: Column(
           children: [
@@ -204,26 +203,27 @@ class _RelatorioPageState extends State<RelatorioPage> {
                 children: [
                   _buildResumoCard(saldo, percentualGasto, currencyFormat),
                   const SizedBox(height: 28),
-
                   const Text("Despesas por Categoria",
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: Color(0xFF1E3A8A))),
+                  const SizedBox(height: 6),
+                  const Text("Toque em uma categoria para ver os detalhes",
+                      style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 12),
                   _buildListaCategorias(currencyFormat),
-
                   const SizedBox(height: 28),
-
-                  // MUDADO: Voltou para a cor primária (Azul Ártico) ao invés do Verde
                   const Text("Detalhamento de Receitas",
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: Color(0xFF1E3A8A))),
+                  const SizedBox(height: 6),
+                  const Text("Toque em uma categoria para ver os detalhes",
+                      style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 12),
                   _buildListaReceitas(currencyFormat),
-
                   const SizedBox(height: 40),
                 ],
               ),
@@ -343,70 +343,146 @@ class _RelatorioPageState extends State<RelatorioPage> {
         final nome = item['categoria'] ?? 'Geral';
         final total = double.tryParse(item['total'].toString()) ?? 0.0;
 
+        final transacoesDestaCategoria = _listaTransacoes
+            .where((t) => t['categoria'] == nome && t['tipo'] == 'despesa')
+            .toList();
+
         return Card(
           elevation: 0,
-          // MUDADO: Bordas Vermelhas (Despesa) conforme solicitado
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: Colors.red.shade100, width: 1.5)),
           margin: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            leading: CircleAvatar(
-                backgroundColor: const Color(0xFFEF4444).withOpacity(0.1),
-                child: Icon(_obterIcone(nome, 'despesa'),
-                    color: const Color(0xFFEF4444))),
-            title: Text(nome,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800, color: Color(0xFF1E3A8A))),
-            trailing: Text(format.format(total),
-                style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFEF4444),
-                    fontSize: 15)),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              leading: CircleAvatar(
+                  backgroundColor: const Color(0xFFEF4444).withOpacity(0.1),
+                  child: Icon(_obterIcone(nome, 'despesa'),
+                      color: const Color(0xFFEF4444))),
+              title: Text(nome,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, color: Color(0xFF1E3A8A))),
+              subtitle: Text('Total: ${format.format(total)}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w900, color: Color(0xFFEF4444))),
+              childrenPadding: const EdgeInsets.only(bottom: 10),
+              children: transacoesDestaCategoria.map((t) {
+                final double valorUnico =
+                    double.tryParse(t['valor'].toString()) ?? 0.0;
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.subdirectory_arrow_right,
+                              size: 16, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(t['descricao'] ?? 'Sem descrição',
+                              style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      Text(format.format(valorUnico),
+                          style: const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         );
       },
     );
   }
 
+  // MUDADO: Agrupamento manual e ExpansionTile para o Raio-X de Receitas
   Widget _buildListaReceitas(NumberFormat format) {
     final receitas =
         _listaTransacoes.where((t) => t['tipo'] == 'receita').toList();
+
     if (receitas.isEmpty)
       return const Text('Nenhuma receita cadastrada neste mês.',
           style: TextStyle(color: Colors.grey));
+
+    // Agrupar receitas em um Map em tempo real
+    Map<String, double> receitasAgrupadas = {};
+    for (var r in receitas) {
+      final cat = r['categoria'] ?? 'Geral';
+      final valor = double.tryParse(r['valor'].toString()) ?? 0.0;
+      receitasAgrupadas[cat] = (receitasAgrupadas[cat] ?? 0.0) + valor;
+    }
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: receitas.length,
+      itemCount: receitasAgrupadas.length,
       itemBuilder: (context, index) {
-        final r = receitas[index];
-        final nomeCat = r['categoria'] ?? 'Geral';
-        final desc = r['descricao'] ?? 'Entrada';
-        final valor = double.tryParse(r['valor'].toString()) ?? 0.0;
+        final nomeCategoria = receitasAgrupadas.keys.elementAt(index);
+        final totalCategoria = receitasAgrupadas[nomeCategoria]!;
+
+        // Filtra as transações dessa categoria para mostrar expandido
+        final transacoesDestaCategoria = receitas
+            .where((t) => (t['categoria'] ?? 'Geral') == nomeCategoria)
+            .toList();
 
         return Card(
           elevation: 0,
-          // Borda Verde mantida para Receitas
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: Colors.green.shade200, width: 1.5)),
           margin: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            leading: CircleAvatar(
-                backgroundColor: const Color(0xFF10B981).withOpacity(0.15),
-                child: Icon(_obterIcone(nomeCat, 'receita'),
-                    color: const Color(0xFF10B981))),
-            title: Text(desc,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800, color: Color(0xFF1E3A8A))),
-            subtitle: Text(nomeCat,
-                style: const TextStyle(color: Colors.grey, fontSize: 12)),
-            trailing: Text('+ ${format.format(valor)}',
-                style: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15)),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              leading: CircleAvatar(
+                  backgroundColor: const Color(0xFF10B981).withOpacity(0.15),
+                  child: Icon(_obterIcone(nomeCategoria, 'receita'),
+                      color: const Color(0xFF10B981))),
+              title: Text(nomeCategoria,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, color: Color(0xFF1E3A8A))),
+              subtitle: Text('Total: + ${format.format(totalCategoria)}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w900, color: Color(0xFF10B981))),
+              childrenPadding: const EdgeInsets.only(bottom: 10),
+              children: transacoesDestaCategoria.map((t) {
+                final double valorUnico =
+                    double.tryParse(t['valor'].toString()) ?? 0.0;
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.subdirectory_arrow_right,
+                              size: 16, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(t['descricao'] ?? 'Entrada',
+                              style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      Text('+ ${format.format(valorUnico)}',
+                          style: const TextStyle(
+                              color: Color(0xFF10B981),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         );
       },
