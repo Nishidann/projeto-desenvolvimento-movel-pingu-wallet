@@ -636,36 +636,42 @@ class _MetasPageState extends State<MetasPage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                            color: _accent.withOpacity(0.12),
-                                            borderRadius:
-                                                BorderRadius.circular(14)),
-                                        child: Icon(iconData,
-                                            color: _accent, size: 24),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(m['titulo'] ?? 'Objetivo',
-                                              style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w900,
-                                                  color: _primary)),
-                                          Text(
-                                              '${currencyFormat.format(atual)} de ${currencyFormat.format(alvo)}',
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey,
-                                                  fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
-                                    ],
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                              color: _accent.withOpacity(0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(14)),
+                                          child: Icon(iconData,
+                                              color: _accent, size: 24),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(m['titulo'] ?? 'Objetivo',
+                                                  style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w900,
+                                                      color: _primary)),
+                                              Text(
+                                                  '${currencyFormat.format(atual)} de ${currencyFormat.format(alvo)}',
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   Text('${(percent * 100).toStringAsFixed(1)}%',
                                       style: const TextStyle(
