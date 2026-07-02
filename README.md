@@ -19,7 +19,7 @@ O Pingu Wallet é a solução ideal para gerenciar sua saúde financeira. Com el
 ## ⚙️ Como Executar
 1. Certifique-se de ter o Flutter SDK instalado.
 2. Clone o repositório.
-3. No terminal, dentro da pasta do projeto:
+3. No terminal, dentro da pasta **frontend**, execute:
    ```bash
    flutter pub get
    flutter run
