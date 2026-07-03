@@ -99,7 +99,7 @@ class _RegistroPageState extends State<RegistroPage> {
   }
 
   void _fazerCadastro() async {
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
 
     final erroNome = _validarNome(_nomeController.text);
     if (erroNome != null) {

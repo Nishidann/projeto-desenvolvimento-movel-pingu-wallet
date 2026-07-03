@@ -15,7 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true; // ESTADO DO OLHINHO AQUI
 
   void _fazerLogin() async {
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
 
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
